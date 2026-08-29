@@ -88,9 +88,3 @@ Die Modul-Dokumentation (`.md`-Dateien, z. B. `array.md`, `net.md`, `Allgemein.m
 Über den Einstellungen-Dialog lässt sich VBX Editor im Windows-Explorer-Kontextmenü registrieren ("Öffnen mit VBX Editor"). Die Registrierung erfolgt ausschließlich unter `HKEY_CURRENT_USER` (keine Adminrechte nötig) und setzt **nicht** die Standard-App für die betroffenen Dateitypen.
 
 Läuft VBX Editor bereits, wird eine so geöffnete Datei als neuer Tab in der laufenden Instanz geöffnet, statt ein zweites Fenster zu starten.
-
-## Bekannte Einschränkungen
-
-- Änderungen an `initState()`, Konstruktoren oder Listener-Registrierungen werden von **Hot Reload nicht zuverlässig übernommen** – in diesen Fällen einen **Hot Restart** durchführen.
-- Zeilennummern basieren auf echten `\n`-Umbrüchen; bei sehr langen, im Editor umbrechenden Zeilen kann die angezeigte Nummer von der visuellen Zeile abweichen.
-- Die Positionierung des Autovervollständigungs-Popups basiert auf einer Schätzung (Zeile × Zeilenhöhe), nicht auf exaktem Text-Layout.
