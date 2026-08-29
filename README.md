@@ -2,6 +2,10 @@
 
 Ein leichtgewichtiger Editor für VBX-Skripte (`.vb`) für Windows, gebaut mit Flutter.
 
+<p align="center">
+  <img src="pic/vbx-editor.png" alt="VBX Editor" width="900">
+</p>
+
 ## Features
 
 ### Editor
