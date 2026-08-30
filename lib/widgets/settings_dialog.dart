@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 
 import '../services/config_service.dart';
 import '../services/file_association_service.dart';
+import '../services/update_service.dart';
+import '../services/version_service.dart';
 
 class SettingsDialog extends StatefulWidget {
   final ConfigService configService;
@@ -16,13 +18,21 @@ class SettingsDialog extends StatefulWidget {
 class _SettingsDialogState extends State<SettingsDialog> {
   final VbxFileAssociationService _fileAssociationService =
       VbxFileAssociationService();
+  final VbxUpdateService _updateService = VbxUpdateService();
 
   late String _theme;
   late final TextEditingController _pathController;
   late bool _fileAssociationEnabled;
+  late double _fontSize;
 
   bool _saving = false;
   String? _error;
+
+  bool _checkingUpdate = false;
+  String? _updateStatus;
+  VbxUpdateCheckResult? _pendingUpdate;
+
+  static const List<double> _fontSizeOptions = [10, 12, 13, 14, 16, 18, 20, 24];
 
   @override
   void initState() {
@@ -32,6 +42,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
       text: widget.configService.vbxExecutable,
     );
     _fileAssociationEnabled = widget.configService.fileAssociationEnabled;
+    _fontSize = widget.configService.fontSize;
   }
 
   @override
@@ -55,6 +66,87 @@ class _SettingsDialogState extends State<SettingsDialog> {
     }
   }
 
+  Future<void> _checkForUpdate() async {
+    setState(() {
+      _checkingUpdate = true;
+      _updateStatus = null;
+      _pendingUpdate = null;
+    });
+
+    try {
+      final executable = _pathController.text.trim();
+
+      final versionService = VbxVersionService(executable: executable);
+      final currentVersion = await versionService.getVersion();
+
+      final result = await _updateService.checkForUpdate(currentVersion);
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _checkingUpdate = false;
+
+        if (result.isNewer) {
+          _pendingUpdate = result;
+          _updateStatus =
+              'Update verfügbar: ${result.latestVersion} (aktuell: ${currentVersion ?? "unbekannt"})';
+        } else {
+          _updateStatus = 'VBX ist bereits aktuell (${result.latestVersion}).';
+        }
+      });
+    } catch (e) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _checkingUpdate = false;
+        _updateStatus = 'Update-Prüfung fehlgeschlagen: $e';
+      });
+    }
+  }
+
+  Future<void> _installUpdate() async {
+    final update = _pendingUpdate;
+
+    if (update == null) {
+      return;
+    }
+
+    setState(() {
+      _checkingUpdate = true;
+      _updateStatus = 'Installiere ${update.latestVersion} ...';
+    });
+
+    try {
+      await _updateService.downloadAndInstall(
+        downloadUrl: update.downloadUrl,
+        targetPath: _pathController.text.trim(),
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _checkingUpdate = false;
+        _pendingUpdate = null;
+        _updateStatus = 'VBX wurde auf ${update.latestVersion} aktualisiert.';
+      });
+    } catch (e) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _checkingUpdate = false;
+        _updateStatus = 'Installation fehlgeschlagen: $e';
+      });
+    }
+  }
+
   Future<void> _save() async {
     setState(() {
       _saving = true;
@@ -64,6 +156,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
     try {
       await widget.configService.setTheme(_theme);
       await widget.configService.setVbxExecutable(_pathController.text.trim());
+      await widget.configService.setFontSize(_fontSize);
 
       final wasEnabled = widget.configService.fileAssociationEnabled;
 
@@ -118,6 +211,30 @@ class _SettingsDialogState extends State<SettingsDialog> {
               },
             ),
             const SizedBox(height: 16),
+            const Text('Schriftgröße (Editor)'),
+            const SizedBox(height: 4),
+            DropdownButton<double>(
+              value: _fontSize,
+              isExpanded: true,
+              items: _fontSizeOptions
+                  .map(
+                    (s) => DropdownMenuItem(
+                      value: s,
+                      child: Text('${s.toInt()}px'),
+                    ),
+                  )
+                  .toList(),
+              onChanged: (size) {
+                if (size == null) {
+                  return;
+                }
+
+                setState(() {
+                  _fontSize = size;
+                });
+              },
+            ),
+            const SizedBox(height: 16),
             const Text('VBX-Executable'),
             const SizedBox(height: 4),
             Row(
@@ -138,6 +255,33 @@ class _SettingsDialogState extends State<SettingsDialog> {
                 ),
               ],
             ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                OutlinedButton.icon(
+                  onPressed: _checkingUpdate ? null : _checkForUpdate,
+                  icon: _checkingUpdate
+                      ? const SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.system_update, size: 16),
+                  label: const Text('Nach Update suchen'),
+                ),
+                if (_pendingUpdate != null) ...[
+                  const SizedBox(width: 8),
+                  FilledButton(
+                    onPressed: _checkingUpdate ? null : _installUpdate,
+                    child: const Text('Installieren'),
+                  ),
+                ],
+              ],
+            ),
+            if (_updateStatus != null) ...[
+              const SizedBox(height: 6),
+              Text(_updateStatus!, style: const TextStyle(fontSize: 12)),
+            ],
             const SizedBox(height: 16),
             CheckboxListTile(
               contentPadding: EdgeInsets.zero,

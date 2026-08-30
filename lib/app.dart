@@ -18,6 +18,7 @@ import 'services/runner_service.dart';
 import 'services/session_service.dart';
 import 'services/single_instance_service.dart';
 import 'services/syntax_service.dart';
+import 'services/update_service.dart';
 import 'services/usage_check_service.dart';
 import 'services/version_service.dart';
 import 'templates.dart';
@@ -70,6 +71,7 @@ class _VbxEditorAppState extends State<VbxEditorApp> with WindowListener {
   bool _isRunning = false;
   bool _isBuilding = false;
   bool _panelVisible = false;
+  bool get _isDarkTheme => widget.configService.theme == 'dark';
 
   bool _consoleVisible = false;
   bool _consoleRunning = false;
@@ -1680,7 +1682,10 @@ class _VbxEditorAppState extends State<VbxEditorApp> with WindowListener {
               );
 
               if (changed == true && mounted) {
-                setState(() {}); // Theme sofort übernehmen
+                setState(() {
+                  _fontSize =
+                      widget.configService.fontSize; // <-- diese Zeile ergänzen
+                });
               }
             },
             icon: const Icon(Icons.settings),
@@ -1820,9 +1825,9 @@ class _VbxEditorAppState extends State<VbxEditorApp> with WindowListener {
                       maxLines: null,
                       minLines: null,
                       textAlignVertical: TextAlignVertical.top,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: 'Consolas',
-                        fontSize: 14,
+                        fontSize: _fontSize,
                       ),
                       decoration: const InputDecoration(
                         border: InputBorder.none,
@@ -1842,7 +1847,7 @@ class _VbxEditorAppState extends State<VbxEditorApp> with WindowListener {
   }
 
   Widget _buildLineNumbers(EditorTab tab, int lineCount) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = _isDarkTheme;
 
     return Container(
       width: 44,
@@ -1859,7 +1864,7 @@ class _VbxEditorAppState extends State<VbxEditorApp> with WindowListener {
                 '${i + 1}',
                 style: TextStyle(
                   fontFamily: 'Consolas',
-                  fontSize: 14,
+                  fontSize: _fontSize,
                   color: isDark ? Colors.white38 : Colors.black45,
                 ),
               );
@@ -1877,7 +1882,7 @@ class _VbxEditorAppState extends State<VbxEditorApp> with WindowListener {
       return const SizedBox.shrink();
     }
 
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = _isDarkTheme;
 
     return Container(
       width: double.infinity,
@@ -1919,7 +1924,7 @@ class _VbxEditorAppState extends State<VbxEditorApp> with WindowListener {
   }
 
   Widget _buildStatusBar() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = _isDarkTheme;
 
     return Container(
       height: 26,
@@ -1950,7 +1955,7 @@ class _VbxEditorAppState extends State<VbxEditorApp> with WindowListener {
   }
 
   Widget _buildOutputPanelHeader() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = _isDarkTheme;
 
     return Container(
       height: 34,
@@ -2012,7 +2017,7 @@ class _VbxEditorAppState extends State<VbxEditorApp> with WindowListener {
       return const SizedBox.shrink();
     }
 
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = _isDarkTheme;
 
     return Container(
       height: 220,
@@ -2039,7 +2044,7 @@ class _VbxEditorAppState extends State<VbxEditorApp> with WindowListener {
   }
 
   Widget _buildConsoleContent() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = _isDarkTheme;
 
     return Column(
       children: [
@@ -2139,7 +2144,7 @@ class _VbxEditorAppState extends State<VbxEditorApp> with WindowListener {
   }
 
   Widget _buildRunOutputContent() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = _isDarkTheme;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(8),
