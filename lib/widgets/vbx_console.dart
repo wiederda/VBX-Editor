@@ -1,162 +1,123 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
+import 'package:xterm2/xterm.dart';
 
 import '../services/terminal_service.dart';
 
 class VbxConsole extends StatefulWidget {
-const VbxConsole({super.key});
+  final bool isDark;
+  final double fontSize;
 
-@override
-State<VbxConsole> createState() => _VbxConsoleState();
+  const VbxConsole({super.key, required this.isDark, required this.fontSize});
+
+  @override
+  State<VbxConsole> createState() => _VbxConsoleState();
 }
 
 class _VbxConsoleState extends State<VbxConsole> {
-final VbxTerminalService _terminal = VbxTerminalService();
-final TextEditingController _inputController = TextEditingController();
-final ScrollController _scrollController = ScrollController();
+  late final Terminal _terminal;
+  late final VbxTerminalService _terminalService;
+  late final FocusNode _terminalFocusNode;
 
-StreamSubscription<String>? _outputSubscription;
+  @override
+  void initState() {
+    super.initState();
 
-String _output = '';
+    _terminal = Terminal(maxLines: 10000);
+    _terminalService = VbxTerminalService();
+    _terminalFocusNode = FocusNode();
 
-@override
-void initState() {
-super.initState();
+    //_terminal.onOutput = (data) {
+    // _terminalService.write(data);
+    // };
 
-_outputSubscription = _terminal.output.listen((text) {
-if (!mounted) {
-return;
-}
+    _startTerminal();
+  }
 
-setState(() {
-_output += text;
-});
+  Future<void> _startTerminal() async {
+    await _terminalService.start(_terminal);
 
-_scrollToBottom();
-});
-}
+    if (!mounted) {
+      return;
+    }
 
-Future<void> _ensureTerminal() async {
-if (_terminal.isRunning) {
-return;
-}
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _terminalFocusNode.requestFocus();
+      }
+    });
+  }
 
-await _terminal.start();
+  @override
+  void dispose() {
+    _terminalService.dispose();
+    _terminal.dispose();
+    _terminalFocusNode.dispose();
 
-if (mounted) {
-setState(() {});
-}
-}
+    super.dispose();
+  }
 
-void _sendCommand() {
-final text = _inputController.text;
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-if (text.isEmpty) {
-_terminal.writeLine('');
-return;
-}
-
-_terminal.writeLine(text);
-_inputController.clear();
-}
-
-void _scrollToBottom() {
-WidgetsBinding.instance.addPostFrameCallback((_) {
-if (!_scrollController.hasClients) {
-return;
-}
-
-_scrollController.jumpTo(
-_scrollController.position.maxScrollExtent,
-);
-});
-}
-
-@override
-void dispose() {
-_outputSubscription?.cancel();
-_inputController.dispose();
-_scrollController.dispose();
-_terminal.dispose();
-
-super.dispose();
-}
-
-@override
-Widget build(BuildContext context) {
-final isDark = Theme.of(context).brightness == Brightness.dark;
-
-return Container(
-color: isDark ? Colors.black : Colors.grey.shade100,
-child: Column(
-children: [
-Expanded(
-child: SingleChildScrollView(
-controller: _scrollController,
-padding: const EdgeInsets.all(8),
-child: Align(
-alignment: Alignment.topLeft,
-child: SelectableText(
-_output,
-style: TextStyle(
-fontFamily: 'Consolas',
-fontSize: 13,
-color: isDark ? Colors.white : Colors.black,
-),
-),
-),
-),
-),
-
-Container(
-padding: const EdgeInsets.symmetric(
-horizontal: 8,
-vertical: 6,
-),
-decoration: BoxDecoration(
-border: Border(
-top: BorderSide(
-color: isDark
-? Colors.grey.shade800
-    : Colors.grey.shade300,
-),
-),
-),
-child: Row(
-children: [
-Expanded(
-child: TextField(
-controller: _inputController,
-style: const TextStyle(
-fontFamily: 'Consolas',
-fontSize: 13,
-),
-decoration: const InputDecoration(
-hintText: 'Befehl eingeben ...',
-border: InputBorder.none,
-isDense: true,
-),
-onTap: _ensureTerminal,
-onSubmitted: (_) async {
-await _ensureTerminal();
-_sendCommand();
-},
-),
-),
-IconButton(
-tooltip: 'Befehl ausführen',
-onPressed: () async {
-await _ensureTerminal();
-_sendCommand();
-},
-icon: const Icon(Icons.send),
-),
-],
-),
-),
-],
-),
-);
-}
+    return Container(
+      color: isDark ? Colors.black : Colors.grey.shade100,
+      child: TerminalView(
+        _terminal,
+        focusNode: _terminalFocusNode,
+        textStyle: const TerminalStyle(fontFamily: 'Consolas', fontSize: 13),
+        theme: isDark
+            ? TerminalTheme(
+                cursor: Colors.white,
+                selection: Colors.grey,
+                foreground: Colors.white,
+                background: Colors.black,
+                black: Colors.black,
+                red: Colors.red,
+                green: Colors.green,
+                yellow: Colors.yellow,
+                blue: Colors.blue,
+                magenta: Colors.purple,
+                cyan: Colors.cyan,
+                white: Colors.white,
+                brightBlack: Colors.grey,
+                brightRed: Colors.redAccent,
+                brightGreen: Colors.greenAccent,
+                brightYellow: Colors.yellowAccent,
+                brightBlue: Colors.blueAccent,
+                brightMagenta: Colors.purpleAccent,
+                brightCyan: Colors.cyanAccent,
+                brightWhite: Colors.white,
+                searchHitBackground: Colors.yellow,
+                searchHitBackgroundCurrent: Colors.orange,
+                searchHitForeground: Colors.black,
+              )
+            : TerminalTheme(
+                cursor: Colors.black,
+                selection: Colors.grey.shade300,
+                foreground: Colors.black,
+                background: Colors.grey.shade100,
+                black: Colors.black,
+                red: Colors.red,
+                green: Colors.green,
+                yellow: Colors.orange,
+                blue: Colors.blue,
+                magenta: Colors.purple,
+                cyan: Colors.cyan,
+                white: Colors.white,
+                brightBlack: Colors.grey,
+                brightRed: Colors.redAccent,
+                brightGreen: Colors.green,
+                brightYellow: Colors.orangeAccent,
+                brightBlue: Colors.blueAccent,
+                brightMagenta: Colors.purpleAccent,
+                brightCyan: Colors.cyanAccent,
+                brightWhite: Colors.white,
+                searchHitBackground: Colors.yellow.shade300,
+                searchHitBackgroundCurrent: Colors.orange.shade300,
+                searchHitForeground: Colors.black,
+              ),
+      ),
+    );
+  }
 }

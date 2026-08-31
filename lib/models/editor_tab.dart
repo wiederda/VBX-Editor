@@ -14,6 +14,7 @@ class EditorTab {
   // den Gutter-Scroll-Controller synchron mit.
   final ScrollController scrollController = ScrollController();
   final ScrollController gutterScrollController = ScrollController();
+  final UndoHistoryController undoController = UndoHistoryController();
 
   bool modified = false;
 
@@ -65,7 +66,7 @@ class EditorTab {
   }
 
   void dispose() {
-    focusNode.dispose();
+    undoController.dispose();
     scrollController.removeListener(_syncGutterScroll);
     scrollController.dispose();
     gutterScrollController.dispose();

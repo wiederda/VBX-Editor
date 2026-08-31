@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:cross_file/cross_file.dart';
@@ -18,14 +17,14 @@ import 'services/runner_service.dart';
 import 'services/session_service.dart';
 import 'services/single_instance_service.dart';
 import 'services/syntax_service.dart';
-import 'services/update_service.dart';
 import 'services/usage_check_service.dart';
 import 'services/version_service.dart';
 import 'templates.dart';
-import 'widgets/ansi_text.dart';
 import 'widgets/autocomplete_overlay.dart';
 import 'widgets/docs_panel.dart';
 import 'widgets/settings_dialog.dart';
+import 'widgets/vbx_console.dart';
+import 'widgets/comment_icons.dart';
 
 class VbxEditorApp extends StatefulWidget {
   final ConfigService configService;
@@ -55,8 +54,8 @@ class _VbxEditorAppState extends State<VbxEditorApp> with WindowListener {
   final VbxDocsService _docsService = VbxDocsService();
   final VbxSessionService _sessionService = VbxSessionService();
   final AutocompleteController _autocomplete = AutocompleteController();
-  final TextEditingController _consoleInputController = TextEditingController();
-  final FocusNode _consoleInputFocusNode = FocusNode();
+
+  TextSelection? _runOutputSelection;
   bool _docsVisible = false;
   double _fontSize = 14.0;
   BuildContext? _bodyContext;
@@ -67,23 +66,19 @@ class _VbxEditorAppState extends State<VbxEditorApp> with WindowListener {
   int _outputPanel = 0;
 
   String _runOutput = '';
-  String _consoleOutput = '';
   bool _isRunning = false;
   bool _isBuilding = false;
   bool _panelVisible = false;
   bool get _isDarkTheme => widget.configService.theme == 'dark';
 
-  bool _consoleVisible = false;
-  bool _consoleRunning = false;
-
-  Process? _consoleProcess;
-  StreamSubscription<String>? _consoleOutputSubscription;
-  StreamSubscription<String>? _consoleErrorSubscription;
   StreamSubscription<String>? _fileOpenSubscription;
 
   String _vbxVersion = 'Version wird ermittelt ...';
   bool _searchVisible = false;
   final TextEditingController _searchController = TextEditingController();
+  int _searchMatchIndex = -1;
+  List<int> _searchMatches = [];
+
   VbxSyntaxInfo? _currentSyntaxInfo;
 
   @override
@@ -111,6 +106,7 @@ class _VbxEditorAppState extends State<VbxEditorApp> with WindowListener {
         setState(() {});
       }
     });
+
     _fileOpenSubscription = widget.singleInstanceService.onFileOpenRequested
         .listen((path) async {
           await windowManager.show();
@@ -120,64 +116,6 @@ class _VbxEditorAppState extends State<VbxEditorApp> with WindowListener {
             await _openFilePath(path);
           }
         });
-
-    // if (widget.initialFilePath != null) {
-    // _openFilePath(widget.initialFilePath!);
-    // }
-  }
-
-  Future<void> _startConsole() async {
-    if (!Platform.isWindows) {
-      return;
-    }
-
-    if (_consoleProcess != null) {
-      return;
-    }
-
-    final process = await Process.start('cmd.exe', ['/K'], runInShell: true);
-
-    _consoleProcess = process;
-
-    setState(() {
-      _consoleRunning = true;
-      _consoleVisible = true;
-    });
-
-    _consoleOutputSubscription = process.stdout.transform(utf8.decoder).listen((
-      data,
-    ) {
-      if (!mounted) {
-        return;
-      }
-
-      setState(() {
-        _consoleOutput += data;
-      });
-    });
-
-    _consoleErrorSubscription = process.stderr.transform(utf8.decoder).listen((
-      data,
-    ) {
-      if (!mounted) {
-        return;
-      }
-
-      setState(() {
-        _consoleOutput += data;
-      });
-    });
-
-    process.exitCode.then((_) {
-      if (!mounted) {
-        return;
-      }
-
-      setState(() {
-        _consoleRunning = false;
-        _consoleProcess = null;
-      });
-    });
   }
 
   Future<void> _startupSequence() async {
@@ -382,6 +320,58 @@ class _VbxEditorAppState extends State<VbxEditorApp> with WindowListener {
     });
   }
 
+  void _updateSearchMatches() {
+    final tab = _currentTab;
+
+    if (tab == null) {
+      _searchMatches = [];
+      _searchMatchIndex = -1;
+      return;
+    }
+
+    final searchText = _searchController.text;
+
+    if (searchText.isEmpty) {
+      _searchMatches = [];
+      _searchMatchIndex = -1;
+      return;
+    }
+
+    final text = tab.controller.text;
+    final matches = <int>[];
+
+    var index = 0;
+
+    while (index < text.length) {
+      final found = text.indexOf(searchText, index);
+
+      if (found == -1) {
+        break;
+      }
+
+      matches.add(found);
+      index = found + searchText.length;
+    }
+
+    _searchMatches = matches;
+
+    if (_searchMatches.isEmpty) {
+      _searchMatchIndex = -1;
+      return;
+    }
+
+    // Aktuelle Cursorposition möglichst berücksichtigen.
+    final cursor = tab.controller.selection.baseOffset;
+
+    var selected = _searchMatches.indexWhere((match) => match >= cursor);
+
+    if (selected == -1) {
+      selected = 0;
+    }
+
+    _searchMatchIndex = selected;
+  }
+
   void _autoInsertUseDirective(List<ModuleUsageIssue> warnings) {
     final tab = _currentTab;
 
@@ -473,7 +463,6 @@ class _VbxEditorAppState extends State<VbxEditorApp> with WindowListener {
 
     // Cursorposition möglichst erhalten.
     final oldSelection = tab.controller.selection;
-    //final oldTextLength = text.length;
 
     var offset = oldSelection.baseOffset;
 
@@ -498,40 +487,6 @@ class _VbxEditorAppState extends State<VbxEditorApp> with WindowListener {
     );
   }
 
-  void _sendConsoleCommand() {
-    final process = _consoleProcess;
-
-    if (process == null) {
-      return;
-    }
-
-    final command = _consoleInputController.text;
-
-    if (command.isEmpty) {
-      return;
-    }
-
-    final trimmedLower = command.trim().toLowerCase();
-
-    // cls/clear haben in einem umgeleiteten (gepipten) cmd.exe-Prozess
-    // keine Wirkung, da sie intern den Windows-Konsolen-Bildschirmpuffer
-    // direkt manipulieren, nicht die stdout-Textausgabe. Deshalb selbst
-    // behandeln, statt es an den Prozess weiterzureichen.
-    if (trimmedLower == 'cls' || trimmedLower == 'clear') {
-      setState(() {
-        _consoleOutput = '';
-      });
-
-      _consoleInputController.clear();
-      return;
-    }
-
-    process.stdin.writeln(command);
-    process.stdin.flush();
-
-    _consoleInputController.clear();
-  }
-
   bool _isUseCommentLine(String trimmedLine) {
     final withoutComment = trimmedLine.replaceFirst(RegExp(r"^'\s*"), '');
 
@@ -554,7 +509,7 @@ class _VbxEditorAppState extends State<VbxEditorApp> with WindowListener {
     }
 
     setState(() {
-      _isRunning = true;
+      _isBuilding = true;
       _runOutput = '';
       _panelVisible = true;
       _outputPanel = 0;
@@ -581,10 +536,11 @@ class _VbxEditorAppState extends State<VbxEditorApp> with WindowListener {
     });
   }
 
-  // --- NEU: Dialog für fehlende #use-Module ---
+  // --- Dialog für fehlende #use-Module (aktuell ungenutzt, da automatisch
+  // eingefügt wird -- bleibt als Baustein für spätere Rückfrage-Option) ---
   Future<bool?> _showUsageWarningsDialog(List<ModuleUsageIssue> warnings) {
     return showDialog<bool>(
-      context: _navigatorKey.currentContext!, // <-- geändert
+      context: _navigatorKey.currentContext!,
       builder: (context) {
         return AlertDialog(
           title: const Text('Mögliche fehlende #use-Module'),
@@ -648,12 +604,56 @@ class _VbxEditorAppState extends State<VbxEditorApp> with WindowListener {
   void _findNext() {
     final tab = _currentTab;
 
+    if (tab == null || _searchController.text.isEmpty) {
+      return;
+    }
+
+    _updateSearchMatches();
+
+    if (_searchMatches.isEmpty) {
+      return;
+    }
+
+    if (_searchMatchIndex == -1) {
+      _searchMatchIndex = 0;
+    } else {
+      _searchMatchIndex = (_searchMatchIndex + 1) % _searchMatches.length;
+    }
+
+    _selectCurrentSearchMatch();
+  }
+
+  void _findPrevious() {
+    final tab = _currentTab;
+
+    if (tab == null || _searchController.text.isEmpty) {
+      return;
+    }
+
+    _updateSearchMatches();
+
+    if (_searchMatches.isEmpty) {
+      return;
+    }
+
+    if (_searchMatchIndex == -1) {
+      _searchMatchIndex = _searchMatches.length - 1;
+    } else {
+      _searchMatchIndex =
+          (_searchMatchIndex - 1 + _searchMatches.length) %
+          _searchMatches.length;
+    }
+
+    _selectCurrentSearchMatch();
+  }
+
+  void _selectCurrentSearchMatch() {
+    final tab = _currentTab;
     if (tab == null) {
       return;
     }
 
     final searchText = _searchController.text;
-
     if (searchText.isEmpty) {
       return;
     }
@@ -661,13 +661,12 @@ class _VbxEditorAppState extends State<VbxEditorApp> with WindowListener {
     final text = tab.controller.text;
     final cursor = tab.controller.selection.baseOffset;
 
-    if (cursor < 0) {
+    if (cursor < 0 || cursor > text.length) {
       return;
     }
 
     var index = text.indexOf(searchText, cursor);
 
-    // Am Ende angekommen -> wieder von vorne suchen
     if (index == -1) {
       index = text.indexOf(searchText);
     }
@@ -680,54 +679,25 @@ class _VbxEditorAppState extends State<VbxEditorApp> with WindowListener {
       baseOffset: index,
       extentOffset: index + searchText.length,
     );
+
+    tab.focusNode.requestFocus();
   }
 
-  void _findPrevious() {
+  bool get _hasSelection {
     final tab = _currentTab;
 
     if (tab == null) {
-      return;
+      return false;
     }
 
-    final searchText = _searchController.text;
+    final selection = tab.controller.selection;
 
-    if (searchText.isEmpty) {
-      return;
-    }
-
-    final text = tab.controller.text;
-    final cursor = tab.controller.selection.baseOffset;
-
-    if (cursor < 0) {
-      return;
-    }
-
-    final searchEnd = cursor > 0 ? cursor : text.length;
-
-    var index = text.lastIndexOf(searchText, searchEnd - 1);
-
-    // Am Anfang angekommen -> vom Ende suchen
-    if (index == -1) {
-      index = text.lastIndexOf(searchText);
-    }
-
-    if (index == -1) {
-      return;
-    }
-
-    tab.controller.selection = TextSelection(
-      baseOffset: index,
-      extentOffset: index + searchText.length,
-    );
+    return selection.start != selection.end;
   }
 
-  void _toggleCommentSelection() {
-    final tab = _currentTab;
-
-    if (tab == null) {
-      return;
-    }
-
+  ({int lineStart, int lineEnd, List<String> lines}) _selectedLineRange(
+    EditorTab tab,
+  ) {
     final text = tab.controller.text;
     final selection = tab.controller.selection;
 
@@ -761,36 +731,19 @@ class _VbxEditorAppState extends State<VbxEditorApp> with WindowListener {
     final block = text.substring(lineStart, lineEnd);
     final lines = block.split('\n');
 
-    final commentPrefixRegex = RegExp(r"^(\s*)'\s?");
+    return (lineStart: lineStart, lineEnd: lineEnd, lines: lines);
+  }
 
-    final nonEmptyLines = lines.where((l) => l.trim().isNotEmpty).toList();
-    final isAllCommented =
-        nonEmptyLines.isNotEmpty &&
-        nonEmptyLines.every((l) => l.trimLeft().startsWith("'"));
-
-    List<String> newLines;
-
-    if (isAllCommented) {
-      // Kommentar entfernen.
-      newLines = lines.map((l) {
-        final match = commentPrefixRegex.firstMatch(l);
-        if (match == null) return l;
-        final ws = match.group(1)!;
-        return ws + l.substring(match.end);
-      }).toList();
-    } else {
-      // Kommentar hinzufügen -- leere Zeilen bleiben unangetastet.
-      newLines = lines.map((l) {
-        if (l.trim().isEmpty) return l;
-
-        final indentMatch = RegExp(r'^(\s*)').firstMatch(l)!;
-        final indent = indentMatch.group(1)!;
-
-        return "$indent' ${l.substring(indent.length)}";
-      }).toList();
-    }
-
+  void _applyLineEdit(
+    EditorTab tab,
+    int lineStart,
+    int lineEnd,
+    List<String> newLines,
+  ) {
+    final text = tab.controller.text;
+    final block = text.substring(lineStart, lineEnd);
     final newBlock = newLines.join('\n');
+
     final newText =
         text.substring(0, lineStart) + newBlock + text.substring(lineEnd);
 
@@ -807,6 +760,53 @@ class _VbxEditorAppState extends State<VbxEditorApp> with WindowListener {
     });
   }
 
+  void _commentSelectedLines() {
+    final tab = _currentTab;
+
+    if (tab == null || !_hasSelection) {
+      return;
+    }
+
+    final range = _selectedLineRange(tab);
+
+    final newLines = range.lines.map((l) {
+      if (l.trim().isEmpty) {
+        return l;
+      }
+
+      final indentMatch = RegExp(r'^(\s*)').firstMatch(l)!;
+      final indent = indentMatch.group(1)!;
+
+      return "$indent' ${l.substring(indent.length)}";
+    }).toList();
+
+    _applyLineEdit(tab, range.lineStart, range.lineEnd, newLines);
+  }
+
+  void _uncommentSelectedLines() {
+    final tab = _currentTab;
+
+    if (tab == null || !_hasSelection) {
+      return;
+    }
+
+    final range = _selectedLineRange(tab);
+    final commentPrefixRegex = RegExp(r"^(\s*)'\s?");
+
+    final newLines = range.lines.map((l) {
+      final match = commentPrefixRegex.firstMatch(l);
+
+      if (match == null) {
+        return l;
+      }
+
+      final ws = match.group(1)!;
+      return ws + l.substring(match.end);
+    }).toList();
+
+    _applyLineEdit(tab, range.lineStart, range.lineEnd, newLines);
+  }
+
   void _handleAutocompleteTrigger(EditorTab tab) {
     final text = tab.controller.text;
     final cursor = tab.controller.selection.baseOffset;
@@ -816,19 +816,31 @@ class _VbxEditorAppState extends State<VbxEditorApp> with WindowListener {
       return;
     }
 
-    // Sucht "modul." oder "modul.teil" direkt vor dem Cursor.
     final beforeCursor = text.substring(0, cursor);
-    final match = RegExp(
+
+    // ------------------------------------------------------------
+    // Fall 1: modul.Funktion
+    // ------------------------------------------------------------
+
+    final moduleMatch = RegExp(
       r'([A-Za-z_][A-Za-z0-9_]*)\.([A-Za-z0-9_]*)$',
     ).firstMatch(beforeCursor);
 
-    if (match == null) {
-      _autocomplete.hide();
+    if (moduleMatch != null) {
+      _handleModuleAutocomplete(tab, moduleMatch);
       return;
     }
 
-    final module = match.group(1)!;
-    final partial = match.group(2)!.toLowerCase();
+    // ------------------------------------------------------------
+    // Fall 2: lokale Variable (Dim/Public)
+    // ------------------------------------------------------------
+
+    _handleIdentifierAutocomplete(tab, beforeCursor);
+  }
+
+  void _handleModuleAutocomplete(EditorTab tab, RegExpMatch moduleMatch) {
+    final module = moduleMatch.group(1)!;
+    final partial = moduleMatch.group(2)!.toLowerCase();
 
     final allFunctions = _syntaxService.findModuleFunctions(module);
 
@@ -846,8 +858,106 @@ class _VbxEditorAppState extends State<VbxEditorApp> with WindowListener {
       return;
     }
 
+    _showAutocompletePopup(
+      tab,
+      filtered,
+      onSelect: (info) => _insertAutocompleteSelection(tab, info),
+    );
+  }
+
+  void _handleIdentifierAutocomplete(EditorTab tab, String beforeCursor) {
+    final identMatch = RegExp(
+      r'([A-Za-z_][A-Za-z0-9_]*)$',
+    ).firstMatch(beforeCursor);
+
+    if (identMatch == null) {
+      _autocomplete.hide();
+      return;
+    }
+
+    final partial = identMatch.group(1)!;
+
+    // Erst ab 2 Zeichen vorschlagen, sonst poppt bei jedem einzelnen
+    // Buchstaben eine Liste auf.
+    if (partial.length < 2) {
+      _autocomplete.hide();
+      return;
+    }
+
+    // Während man selbst gerade "Dim xyz" / "Public xyz" tippt, nicht
+    // den gerade entstehenden Namen sich selbst vorschlagen.
+    final lineStart = beforeCursor.lastIndexOf('\n') + 1;
+    final currentLine = beforeCursor.substring(lineStart);
+
+    final isDeclarationLine = RegExp(
+      r'^\s*(Dim|Public)\s+[A-Za-z_][A-Za-z0-9_]*$',
+      caseSensitive: false,
+    ).hasMatch(currentLine);
+
+    if (isDeclarationLine) {
+      _autocomplete.hide();
+      return;
+    }
+
+    final declared = _findDeclaredIdentifiers(tab.controller.text);
+
+    final partialLower = partial.toLowerCase();
+
+    final filtered =
+        declared
+            .where(
+              (name) =>
+                  name.toLowerCase().startsWith(partialLower) &&
+                  name.toLowerCase() != partialLower,
+            )
+            .toList()
+          ..sort();
+
+    if (filtered.isEmpty) {
+      _autocomplete.hide();
+      return;
+    }
+
+    final suggestions = filtered
+        .map(
+          (name) =>
+              VbxSyntaxInfo(name: name, syntax: name, description: 'Variable'),
+        )
+        .toList();
+
+    _showAutocompletePopup(
+      tab,
+      suggestions,
+      onSelect: (info) => _insertIdentifierSelection(tab, info),
+    );
+  }
+
+  List<String> _findDeclaredIdentifiers(String text) {
+    final regex = RegExp(
+      r'\b(?:Dim|Public)\s+([A-Za-z_][A-Za-z0-9_]*)',
+      caseSensitive: false,
+    );
+
+    final names = <String>{};
+
+    for (final match in regex.allMatches(text)) {
+      final name = match.group(1);
+
+      if (name != null) {
+        names.add(name);
+      }
+    }
+
+    return names.toList();
+  }
+
+  void _showAutocompletePopup(
+    EditorTab tab,
+    List<VbxSyntaxInfo> suggestions, {
+    required void Function(VbxSyntaxInfo info) onSelect,
+  }) {
     if (_autocomplete.isVisible) {
-      _autocomplete.update(filtered);
+      _autocomplete.update(suggestions);
       return;
     }
 
@@ -855,9 +965,8 @@ class _VbxEditorAppState extends State<VbxEditorApp> with WindowListener {
       return;
     }
 
-    // Position unterhalb des Cursors grob schätzen (Zeile * Zeilenhöhe).
     final lineColumn = _lineColumnFor(tab);
-    const lineHeight = 20.0; // grobe Näherung für fontSize 14, Consolas
+    const lineHeight = 20.0;
     const charWidth = 8.4;
 
     final toolbarAndTabsHeight = 48.0 + 40.0;
@@ -875,11 +984,38 @@ class _VbxEditorAppState extends State<VbxEditorApp> with WindowListener {
     _autocomplete.show(
       context: _bodyContext!,
       position: Offset(dx, dy),
-      suggestions: filtered,
-      onSelect: (info) {
-        _insertAutocompleteSelection(tab, info);
-      },
+      suggestions: suggestions,
+      onSelect: onSelect,
     );
+  }
+
+  void _insertIdentifierSelection(EditorTab tab, VbxSyntaxInfo info) {
+    final text = tab.controller.text;
+    final cursor = tab.controller.selection.baseOffset;
+
+    if (cursor < 0 || cursor > text.length) {
+      return;
+    }
+
+    final beforeCursor = text.substring(0, cursor);
+    final match = RegExp(r'([A-Za-z_][A-Za-z0-9_]*)$').firstMatch(beforeCursor);
+
+    if (match == null) {
+      return;
+    }
+
+    final partialStart = match.start;
+
+    final newText =
+        text.substring(0, partialStart) + info.name + text.substring(cursor);
+    final newCursor = partialStart + info.name.length;
+
+    tab.controller.value = TextEditingValue(
+      text: newText,
+      selection: TextSelection.collapsed(offset: newCursor),
+    );
+
+    tab.focusNode.requestFocus();
   }
 
   void _insertAutocompleteSelection(EditorTab tab, VbxSyntaxInfo info) {
@@ -1414,13 +1550,6 @@ class _VbxEditorAppState extends State<VbxEditorApp> with WindowListener {
 
   @override
   void dispose() {
-    _consoleOutputSubscription?.cancel();
-    _consoleErrorSubscription?.cancel();
-    _consoleProcess?.kill();
-
-    _consoleInputController.dispose();
-    _consoleInputFocusNode.dispose();
-
     _fileOpenSubscription?.cancel();
     widget.singleInstanceService.dispose();
     _searchController.dispose();
@@ -1451,6 +1580,18 @@ class _VbxEditorAppState extends State<VbxEditorApp> with WindowListener {
             LogicalKeyboardKey.keyS,
           ): () {
             _saveCurrentFile();
+          },
+          LogicalKeySet(
+            LogicalKeyboardKey.control,
+            LogicalKeyboardKey.keyZ,
+          ): () {
+            _currentTab?.undoController.undo();
+          },
+          LogicalKeySet(
+            LogicalKeyboardKey.control,
+            LogicalKeyboardKey.keyY,
+          ): () {
+            _currentTab?.undoController.redo();
           },
         },
         child: Scaffold(
@@ -1615,7 +1756,7 @@ class _VbxEditorAppState extends State<VbxEditorApp> with WindowListener {
             icon: const Icon(Icons.add),
           ),
           IconButton(
-            tooltip: 'Dateu neu laden',
+            tooltip: 'Datei neu laden',
             onPressed: _currentTab?.filePath != null
                 ? _reloadCurrentFile
                 : null,
@@ -1683,17 +1824,31 @@ class _VbxEditorAppState extends State<VbxEditorApp> with WindowListener {
 
               if (changed == true && mounted) {
                 setState(() {
-                  _fontSize =
-                      widget.configService.fontSize; // <-- diese Zeile ergänzen
+                  _fontSize = widget.configService.fontSize;
                 });
               }
             },
             icon: const Icon(Icons.settings),
           ),
           IconButton(
-            tooltip: 'Kommentar umschalten',
-            onPressed: _currentTabHasContent ? _toggleCommentSelection : null,
-            icon: const Icon(Icons.comment),
+            tooltip: 'Auskommentieren',
+            onPressed: _hasSelection ? _commentSelectedLines : null,
+            icon: CommentIcon(
+              uncomment: false,
+              color: _hasSelection
+                  ? (_isDarkTheme ? Colors.white : Colors.black87)
+                  : null,
+            ),
+          ),
+          IconButton(
+            tooltip: 'Einkommentieren',
+            onPressed: _hasSelection ? _uncommentSelectedLines : null,
+            icon: CommentIcon(
+              uncomment: true,
+              color: _hasSelection
+                  ? (_isDarkTheme ? Colors.white : Colors.black87)
+                  : null,
+            ),
           ),
           IconButton(
             tooltip: _panelVisible
@@ -1738,6 +1893,11 @@ class _VbxEditorAppState extends State<VbxEditorApp> with WindowListener {
                     icon: const Icon(Icons.close, size: 18),
                   ),
                 ),
+                onChanged: (_) {
+                  setState(() {
+                    _updateSearchMatches();
+                  });
+                },
                 onSubmitted: (_) => _findNext(),
               ),
             ),
@@ -1786,11 +1946,41 @@ class _VbxEditorAppState extends State<VbxEditorApp> with WindowListener {
                   padding: const EdgeInsets.all(4),
                   child: Focus(
                     onKeyEvent: (node, event) {
-                      if (!_autocomplete.isVisible) {
+                      if (event is! KeyDownEvent) {
                         return KeyEventResult.ignored;
                       }
 
-                      if (event is! KeyDownEvent) {
+                      // ------------------------------------------------------------
+                      // Suche
+                      // ------------------------------------------------------------
+
+                      if (_searchVisible) {
+                        if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+                          _findNext();
+                          return KeyEventResult.handled;
+                        }
+
+                        if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+                          _findPrevious();
+                          return KeyEventResult.handled;
+                        }
+
+                        if (event.logicalKey == LogicalKeyboardKey.enter) {
+                          _findNext();
+                          return KeyEventResult.handled;
+                        }
+
+                        if (event.logicalKey == LogicalKeyboardKey.escape) {
+                          _closeSearch();
+                          return KeyEventResult.handled;
+                        }
+                      }
+
+                      // ------------------------------------------------------------
+                      // Autocomplete
+                      // ------------------------------------------------------------
+
+                      if (!_autocomplete.isVisible) {
                         return KeyEventResult.ignored;
                       }
 
@@ -1821,6 +2011,7 @@ class _VbxEditorAppState extends State<VbxEditorApp> with WindowListener {
                       controller: tab.controller,
                       scrollController: tab.scrollController,
                       focusNode: tab.focusNode,
+                      undoController: tab.undoController,
                       expands: true,
                       maxLines: null,
                       minLines: null,
@@ -1978,29 +2169,21 @@ class _VbxEditorAppState extends State<VbxEditorApp> with WindowListener {
             child: const Text('Ausgabe'),
           ),
           TextButton(
-            onPressed: () async {
-              if (!_consoleRunning) {
-                await _startConsole();
-              }
-
-              if (mounted) {
-                setState(() {
-                  _outputPanel = 1;
-                  _consoleVisible = true;
-                });
-                _consoleInputFocusNode.requestFocus();
-              }
+            onPressed: () {
+              setState(() {
+                _outputPanel = 1;
+                _panelVisible = true;
+              });
             },
             child: const Text('Konsole'),
           ),
           const Spacer(),
           IconButton(
-            tooltip: 'Ausgabe schließen',
+            tooltip: 'Panel ausblenden',
             padding: EdgeInsets.zero,
             onPressed: () {
               setState(() {
-                _consoleVisible = false;
-                _runOutput = '';
+                _panelVisible = false;
               });
             },
             icon: const Icon(Icons.close, size: 18),
@@ -2020,7 +2203,7 @@ class _VbxEditorAppState extends State<VbxEditorApp> with WindowListener {
     final isDark = _isDarkTheme;
 
     return Container(
-      height: 220,
+      height: 250,
       width: double.infinity,
       decoration: BoxDecoration(
         color: isDark ? Colors.black : Colors.grey.shade100,
@@ -2034,9 +2217,18 @@ class _VbxEditorAppState extends State<VbxEditorApp> with WindowListener {
         children: [
           _buildOutputPanelHeader(),
           Expanded(
-            child: _outputPanel == 0
-                ? _buildRunOutputContent()
-                : _buildConsoleContent(),
+            child: Stack(
+              children: [
+                Offstage(
+                  offstage: _outputPanel != 0,
+                  child: _buildRunOutputContent(),
+                ),
+                Offstage(
+                  offstage: _outputPanel != 1,
+                  child: _buildConsoleContent(),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -2044,103 +2236,7 @@ class _VbxEditorAppState extends State<VbxEditorApp> with WindowListener {
   }
 
   Widget _buildConsoleContent() {
-    final isDark = _isDarkTheme;
-
-    return Column(
-      children: [
-        Expanded(
-          child: Container(
-            width: double.infinity,
-            color: const Color(0xFF1E1E1E), // immer dunkel, wie ein Terminal
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(8),
-              child: Align(
-                alignment: Alignment.topLeft,
-                child: SelectableText.rich(
-                  TextSpan(
-                    children: AnsiSpanBuilder.parse(
-                      _consoleOutput,
-                      const TextStyle(
-                        fontFamily: 'Consolas',
-                        fontSize: 13,
-                        color:
-                            Colors.white70, // fester Standardton fürs Terminal
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-
-        // ------------------------------------------------------------
-        // Befehlszeile (unverändert, bleibt themeabhängig grau)
-        // ------------------------------------------------------------
-        Container(
-          height: 38,
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF2A2A2E) : Colors.grey.shade300,
-            border: Border(
-              top: BorderSide(
-                color: isDark
-                    ? Colors.blueGrey.shade600
-                    : Colors.blueGrey.shade300,
-                width: 1,
-              ),
-            ),
-          ),
-          child: Row(
-            children: [
-              Text(
-                '>',
-                style: TextStyle(
-                  fontFamily: 'Consolas',
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                  color: isDark
-                      ? Colors.blueGrey.shade100
-                      : Colors.blueGrey.shade700,
-                ),
-              ),
-
-              const SizedBox(width: 8),
-
-              Expanded(
-                child: TextField(
-                  controller: _consoleInputController,
-                  focusNode: _consoleInputFocusNode,
-                  style: TextStyle(
-                    fontFamily: 'Consolas',
-                    fontSize: 15,
-                    color: isDark ? Colors.white : Colors.black87,
-                  ),
-                  cursorColor: isDark
-                      ? Colors.blueGrey.shade100
-                      : Colors.blueGrey.shade700,
-                  decoration: const InputDecoration(
-                    border: InputBorder.none,
-                    isDense: true,
-                    hintText: 'Befehl eingeben ...',
-                    contentPadding: EdgeInsets.zero,
-                  ),
-                  onSubmitted: (_) {
-                    _sendConsoleCommand();
-
-                    WidgetsBinding.instance.addPostFrameCallback((_) {
-                      if (mounted) {
-                        _consoleInputFocusNode.requestFocus();
-                      }
-                    });
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
+    return VbxConsole(isDark: _isDarkTheme, fontSize: _fontSize);
   }
 
   Widget _buildRunOutputContent() {
@@ -2150,12 +2246,36 @@ class _VbxEditorAppState extends State<VbxEditorApp> with WindowListener {
       padding: const EdgeInsets.all(8),
       child: Align(
         alignment: Alignment.topLeft,
-        child: SelectableText(
-          _runOutput,
-          style: TextStyle(
-            fontFamily: 'Consolas',
-            fontSize: 13,
-            color: isDark ? Colors.white : Colors.black,
+        child: GestureDetector(
+          onSecondaryTapUp: (_) {
+            final selection = _runOutputSelection;
+
+            if (selection == null || selection.isCollapsed) {
+              return;
+            }
+
+            final start = selection.start.clamp(0, _runOutput.length);
+            final end = selection.end.clamp(0, _runOutput.length);
+
+            final text = _runOutput.substring(
+              start < end ? start : end,
+              start < end ? end : start,
+            );
+
+            if (text.isNotEmpty) {
+              Clipboard.setData(ClipboardData(text: text));
+            }
+          },
+          child: SelectableText(
+            _runOutput,
+            style: TextStyle(
+              fontFamily: 'Consolas',
+              fontSize: _fontSize,
+              color: isDark ? Colors.white : Colors.black,
+            ),
+            onSelectionChanged: (selection, cause) {
+              _runOutputSelection = selection;
+            },
           ),
         ),
       ),

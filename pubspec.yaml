@@ -38,6 +38,8 @@ dependencies:
   window_manager: ^0.5.1
   flutter_markdown: ^0.7.0
   desktop_drop: ^0.4.4
+  xterm2: ^5.2.0
+  flutter_pty: ^0.4.0
 
 
 dev_dependencies:
