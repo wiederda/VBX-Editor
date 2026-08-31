@@ -25,6 +25,7 @@ import 'widgets/docs_panel.dart';
 import 'widgets/settings_dialog.dart';
 import 'widgets/vbx_console.dart';
 import 'widgets/comment_icons.dart';
+import 'widgets/stop_icon.dart';
 
 class VbxEditorApp extends StatefulWidget {
   final ConfigService configService;
@@ -307,6 +308,17 @@ class _VbxEditorAppState extends State<VbxEditorApp> with WindowListener {
       return;
     }
 
+    if (result.cancelled) {
+      setState(() {
+        _isRunning = false;
+        _isBuilding = false;
+        _runOutput = 'Vorgang wurde abgebrochen.';
+      });
+
+      tab.focusNode.requestFocus();
+      return;
+    }
+
     setState(() {
       _isRunning = false;
 
@@ -316,6 +328,24 @@ class _VbxEditorAppState extends State<VbxEditorApp> with WindowListener {
         _runOutput = result.stdout;
       } else {
         _runOutput = result.stderr;
+      }
+    });
+
+    tab.focusNode.requestFocus();
+  }
+
+  void _stopCurrentFile() {
+    if (!_isRunning && !_isBuilding) {
+      return;
+    }
+
+    _runnerService.stop();
+
+    final tab = _currentTab;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        tab?.focusNode.requestFocus();
       }
     });
   }
@@ -523,6 +553,11 @@ class _VbxEditorAppState extends State<VbxEditorApp> with WindowListener {
 
     setState(() {
       _isBuilding = false;
+
+      if (result.cancelled) {
+        _runOutput = 'Vorgang wurde abgebrochen.';
+        return;
+      }
 
       if (result.stdout.isNotEmpty && result.stderr.isNotEmpty) {
         _runOutput = '${result.stdout}\n${result.stderr}';
@@ -1779,22 +1814,26 @@ class _VbxEditorAppState extends State<VbxEditorApp> with WindowListener {
             onPressed: _currentTabHasContent ? _saveCurrentFileAs : null,
             icon: const Icon(Icons.save_as),
           ),
-
           const VerticalDivider(),
-
           IconButton(
             tooltip: 'Ausführen (F5)',
             onPressed:
-                !_currentTabHasContent || !_currentTabIsExecutable || _isRunning
+                !_currentTabHasContent ||
+                    !_currentTabIsExecutable ||
+                    _isRunning ||
+                    _isBuilding
                 ? null
                 : _runCurrentFile,
-            icon: _isRunning
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.play_arrow),
+            icon: const Icon(Icons.play_arrow),
+          ),
+          IconButton(
+            tooltip: 'Abbrechen',
+            onPressed: (_isRunning || _isBuilding) ? _stopCurrentFile : null,
+            icon: StopIcon(
+              color: (_isRunning || _isBuilding)
+                  ? (_isDarkTheme ? Colors.white : Colors.black87)
+                  : null,
+            ),
           ),
           IconButton(
             tooltip: 'Build',
@@ -1805,13 +1844,7 @@ class _VbxEditorAppState extends State<VbxEditorApp> with WindowListener {
                     _isRunning
                 ? null
                 : _buildCurrentFile,
-            icon: _isBuilding
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.build),
+            icon: const Icon(Icons.build),
           ),
           IconButton(
             tooltip: 'Einstellungen',
@@ -2194,9 +2227,7 @@ class _VbxEditorAppState extends State<VbxEditorApp> with WindowListener {
   }
 
   Widget _buildOutputPanel() {
-    final hasAutoContent = _runOutput.isNotEmpty || _isRunning || _isBuilding;
-
-    if (!_panelVisible && !hasAutoContent) {
+    if (!_panelVisible) {
       return const SizedBox.shrink();
     }
 

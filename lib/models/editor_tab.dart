@@ -67,8 +67,11 @@ class EditorTab {
 
   void dispose() {
     undoController.dispose();
+    focusNode.dispose();
+
     scrollController.removeListener(_syncGutterScroll);
     scrollController.dispose();
+
     gutterScrollController.dispose();
     controller.dispose();
   }
