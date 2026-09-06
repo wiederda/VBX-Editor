@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:convert';
 
 class VbxRunResult {
   final int exitCode;
@@ -75,13 +76,9 @@ class VbxRunnerService {
 
       _process = process;
 
-      final stdoutFuture = process.stdout
-          .transform(systemEncoding.decoder)
-          .join();
+      final stdoutFuture = process.stdout.transform(utf8.decoder).join();
 
-      final stderrFuture = process.stderr
-          .transform(systemEncoding.decoder)
-          .join();
+      final stderrFuture = process.stderr.transform(utf8.decoder).join();
 
       final exitCode = await process.exitCode;
 

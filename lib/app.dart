@@ -26,6 +26,7 @@ import 'widgets/settings_dialog.dart';
 import 'widgets/vbx_console.dart';
 import 'widgets/comment_icons.dart';
 import 'widgets/stop_icon.dart';
+import 'widgets/dryrun_icons.dart';
 
 class VbxEditorApp extends StatefulWidget {
   final ConfigService configService;
@@ -71,6 +72,7 @@ class _VbxEditorAppState extends State<VbxEditorApp> with WindowListener {
   bool _isBuilding = false;
   bool _panelVisible = false;
   bool get _isDarkTheme => widget.configService.theme == 'dark';
+  bool _isDryRunning = false;
 
   StreamSubscription<String>? _fileOpenSubscription;
 
@@ -569,6 +571,56 @@ class _VbxEditorAppState extends State<VbxEditorApp> with WindowListener {
         _runOutput = 'Build fertig (Exit-Code ${result.exitCode})';
       }
     });
+  }
+
+  Future<void> _dryRunCurrentFile() async {
+    final tab = _currentTab;
+
+    if (tab == null || tab.controller.text.trim().isEmpty) {
+      return;
+    }
+
+    if (tab.filePath == null || tab.modified) {
+      await _saveCurrentFile();
+    }
+
+    if (tab.filePath == null || tab.modified) {
+      return;
+    }
+
+    setState(() {
+      _isDryRunning = true;
+      _runOutput = '';
+      _panelVisible = true;
+      _outputPanel = 0;
+    });
+
+    final result = await _runnerService.runCommand('-dryrun', tab.filePath!);
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _isDryRunning = false;
+
+      if (result.cancelled) {
+        _runOutput = 'Vorgang wurde abgebrochen.';
+        return;
+      }
+
+      if (result.stdout.isNotEmpty && result.stderr.isNotEmpty) {
+        _runOutput = '${result.stdout}\n${result.stderr}';
+      } else if (result.stdout.isNotEmpty) {
+        _runOutput = result.stdout;
+      } else if (result.stderr.isNotEmpty) {
+        _runOutput = result.stderr;
+      } else {
+        _runOutput = 'Dry Run ok - keine Fehler gefunden.';
+      }
+    });
+
+    tab.focusNode.requestFocus();
   }
 
   // --- Dialog für fehlende #use-Module (aktuell ungenutzt, da automatisch
@@ -1821,16 +1873,19 @@ class _VbxEditorAppState extends State<VbxEditorApp> with WindowListener {
                 !_currentTabHasContent ||
                     !_currentTabIsExecutable ||
                     _isRunning ||
-                    _isBuilding
+                    _isBuilding ||
+                    _isDryRunning
                 ? null
                 : _runCurrentFile,
             icon: const Icon(Icons.play_arrow),
           ),
           IconButton(
             tooltip: 'Abbrechen',
-            onPressed: (_isRunning || _isBuilding) ? _stopCurrentFile : null,
+            onPressed: (_isRunning || _isBuilding || _isDryRunning)
+                ? _stopCurrentFile
+                : null,
             icon: StopIcon(
-              color: (_isRunning || _isBuilding)
+              color: (_isRunning || _isBuilding || _isDryRunning)
                   ? (_isDarkTheme ? Colors.white : Colors.black87)
                   : null,
             ),
@@ -1841,10 +1896,32 @@ class _VbxEditorAppState extends State<VbxEditorApp> with WindowListener {
                 !_currentTabHasContent ||
                     !_currentTabIsExecutable ||
                     _isBuilding ||
-                    _isRunning
+                    _isRunning ||
+                    _isDryRunning
                 ? null
                 : _buildCurrentFile,
             icon: const Icon(Icons.build),
+          ),
+          IconButton(
+            tooltip: 'Dry Run (nur prüfen, nicht ausführen)',
+            onPressed:
+                !_currentTabHasContent ||
+                    !_currentTabIsExecutable ||
+                    _isRunning ||
+                    _isBuilding ||
+                    _isDryRunning
+                ? null
+                : _dryRunCurrentFile,
+            icon: DryRunIcon(
+              color:
+                  (!_currentTabHasContent ||
+                      !_currentTabIsExecutable ||
+                      _isRunning ||
+                      _isBuilding ||
+                      _isDryRunning)
+                  ? null
+                  : (_isDarkTheme ? Colors.white : Colors.black87),
+            ),
           ),
           IconButton(
             tooltip: 'Einstellungen',
