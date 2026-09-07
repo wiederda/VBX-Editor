@@ -337,7 +337,8 @@ class _VbxEditorAppState extends State<VbxEditorApp> with WindowListener {
   }
 
   void _stopCurrentFile() {
-    if (!_isRunning && !_isBuilding) {
+    if (!_isRunning && !_isBuilding && !_isDryRunning) {
+      // <-- _isDryRunning ergänzt
       return;
     }
 
