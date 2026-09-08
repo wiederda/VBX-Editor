@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:window_manager/window_manager.dart';
 
-import 'app.dart';
+import 'vbx_editor_app.dart';
 import 'services/config_service.dart';
 import 'services/single_instance_service.dart';
 import 'version.dart';

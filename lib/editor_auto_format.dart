@@ -210,3 +210,33 @@ String reindentDocument(String text) {
 
   return result.join('\n');
 }
+
+({String text, int cursor})? applyAutoCloseQuote(
+  String text,
+  int cursorOffset,
+) {
+  if (cursorOffset <= 0 || cursorOffset > text.length) {
+    return null;
+  }
+
+  // Nur reagieren, wenn gerade ein " eingefügt wurde.
+  if (text[cursorOffset - 1] != '"') {
+    return null;
+  }
+
+  final nextChar = cursorOffset < text.length ? text[cursorOffset] : null;
+
+  if (nextChar == '"') {
+    // Bereits ein schließendes " vorhanden -> nicht doppeln,
+    // stattdessen "drüber tippen": eingefügtes " wieder entfernen,
+    // Cursor hinter das vorhandene " setzen.
+    final newText =
+        text.substring(0, cursorOffset - 1) + text.substring(cursorOffset);
+    return (text: newText, cursor: cursorOffset);
+  }
+
+  // Schließendes " automatisch ergänzen, Cursor dazwischen.
+  final newText =
+      text.substring(0, cursorOffset) + '"' + text.substring(cursorOffset);
+  return (text: newText, cursor: cursorOffset);
+}
