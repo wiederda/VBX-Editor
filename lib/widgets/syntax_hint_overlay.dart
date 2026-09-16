@@ -94,6 +94,10 @@ class _SyntaxHintCard extends StatelessWidget {
   final int paramIndex;
   final bool isDark;
 
+  // Deckkraft der Tooltip-Karte: < 1.0, damit darunterliegender Text
+  // (falls der Tooltip trotz Versatz noch etwas überlappt) durchscheint.
+  static const double _cardOpacity = 0.88;
+
   const _SyntaxHintCard({
     required this.info,
     required this.paramIndex,
@@ -205,10 +209,15 @@ class _SyntaxHintCard extends StatelessWidget {
       ),
     );
 
+    final baseColor = isDark ? const Color(0xFF2D2D30) : Colors.white;
+
     return Material(
       elevation: 6,
       borderRadius: BorderRadius.circular(4),
-      color: isDark ? const Color(0xFF2D2D30) : Colors.white,
+      // Transparent statt deckend: liegt der Tooltip trotz des
+      // vertikalen Versatzes (siehe _updateSyntaxHintOverlay) noch
+      // über Text, bleibt dieser lesbar.
+      color: baseColor.withOpacity(_cardOpacity),
       child: Container(
         constraints: const BoxConstraints(maxWidth: 480),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),

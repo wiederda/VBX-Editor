@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
@@ -18,6 +19,12 @@ class FileService {
     'cfg',
     'env',
   ];
+
+  // Wie viele Bytes für die inhaltsbasierte Text-Erkennung gelesen
+  // werden (looksLikeTextFile). Reicht, um Binärdateien zuverlässig
+  // zu erkennen, ohne bei großen Dateien die komplette Datei lesen
+  // zu müssen.
+  static const int _textSniffByteLimit = 8000;
 
   Future<File?> openVbxFile() async {
     final result = await FilePicker.platform.pickFiles(
@@ -85,5 +92,66 @@ class FileService {
     }
 
     return path.toLowerCase().endsWith('.vb');
+  }
+
+  /// Prüft den tatsächlichen INHALT einer Datei, statt sich nur auf
+  /// die Endung zu verlassen -- gedacht als Fallback für Dateien mit
+  /// unbekannter/fehlender Endung (z.B. "backup.txt.old"), die trotzdem
+  /// reiner Text sind.
+  ///
+  /// Liest die ersten paar KB und prüft:
+  ///   1. Keine Null-Bytes (0x00) -- klassisches Binär-Indiz, in
+  ///      echtem Text praktisch nie vorhanden.
+  ///   2. Der gelesene Ausschnitt lässt sich als gültiges UTF-8
+  ///      dekodieren (konsistent mit readFile(), das intern ebenfalls
+  ///      UTF-8 erwartet).
+  ///
+  /// Da der gelesene Ausschnitt mitten in einer Mehrbyte-UTF-8-Sequenz
+  /// abschneiden kann, wird bei einem Dekodierfehler einmalig mit den
+  /// letzten 3 Bytes weniger erneut versucht, bevor die Datei als
+  /// "kein Text" gilt.
+  static Future<bool> looksLikeTextFile(File file) async {
+    RandomAccessFile? raf;
+
+    try {
+      raf = await file.open();
+
+      final length = await raf.length();
+      final readLength = length < _textSniffByteLimit
+          ? length
+          : _textSniffByteLimit;
+
+      final bytes = await raf.read(readLength);
+
+      if (bytes.contains(0)) {
+        return false;
+      }
+
+      if (_decodesAsUtf8(bytes)) {
+        return true;
+      }
+
+      // Möglicherweise nur am Ende mitten in einer Mehrbyte-Sequenz
+      // abgeschnitten -- ein zweites Mal mit etwas kürzerem Ausschnitt
+      // versuchen, bevor endgültig "kein Text" entschieden wird.
+      if (bytes.length > 3) {
+        return _decodesAsUtf8(bytes.sublist(0, bytes.length - 3));
+      }
+
+      return false;
+    } catch (_) {
+      return false;
+    } finally {
+      await raf?.close();
+    }
+  }
+
+  static bool _decodesAsUtf8(List<int> bytes) {
+    try {
+      utf8.decode(bytes, allowMalformed: false);
+      return true;
+    } on FormatException {
+      return false;
+    }
   }
 }

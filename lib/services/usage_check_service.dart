@@ -43,6 +43,23 @@ class VbxUsageCheckService {
 
   bool _loaded = false;
 
+  // Namespace.Funktion(-Aufrufe. Als Klassenfeld, damit check() und
+  // usedOptionalModules() garantiert dieselbe Erkennung verwenden.
+  static final RegExp _callRegex = RegExp(
+    r'((?:[A-Za-z_][A-Za-z0-9_]*|[0-9]+[A-Za-z_][A-Za-z0-9_]*))\.([A-Za-z_][A-Za-z0-9_]*)\s*\(',
+  );
+
+  /// Schneidet einen Zeilen-Kommentar (') ab, analog zu check().
+  String _stripLineComment(String line) {
+    final commentIndex = line.indexOf("'");
+
+    if (commentIndex >= 0) {
+      return line.substring(0, commentIndex);
+    }
+
+    return line;
+  }
+
   /// Lädt die bekannten Module aus assets/vbx.json.
   Future<void> load() async {
     final jsonString = await rootBundle.loadString('assets/vbx.json');
@@ -96,6 +113,12 @@ class VbxUsageCheckService {
   }
 
   bool get isLoaded => _loaded;
+
+  /// true, wenn [module] ein bekanntes optionales Modul ist
+  /// (case-insensitive).
+  bool isKnownOptionalModule(String module) {
+    return _optionalModules.contains(module.trim().toLowerCase());
+  }
 
   /// Prüft Namespace.Funktion()-Aufrufe.
   ///
@@ -152,10 +175,6 @@ class VbxUsageCheckService {
     // 2. Namespace.Funktion()-Aufrufe suchen
     // ------------------------------------------------------------
 
-    final callRegex = RegExp(
-      r'([A-Za-z_][A-Za-z0-9_]*)\.([A-Za-z_][A-Za-z0-9_]*)\s*\(',
-    );
-
     final issues = <ModuleUsageIssue>[];
 
     // Verhindert doppelte Meldungen an exakt derselben Stelle.
@@ -164,19 +183,9 @@ class VbxUsageCheckService {
     var lineStartOffset = 0;
 
     for (var lineIndex = 0; lineIndex < lines.length; lineIndex++) {
-      var line = lines[lineIndex];
+      final line = _stripLineComment(lines[lineIndex]);
 
-      // ----------------------------------------------------------
-      // Zeilen-Kommentar abschneiden.
-      // ----------------------------------------------------------
-
-      final commentIndex = line.indexOf("'");
-
-      if (commentIndex >= 0) {
-        line = line.substring(0, commentIndex);
-      }
-
-      for (final match in callRegex.allMatches(line)) {
+      for (final match in _callRegex.allMatches(line)) {
         final module = match.group(1)!;
         final function = match.group(2)!;
 
@@ -246,6 +255,37 @@ class VbxUsageCheckService {
     }
 
     return issues;
+  }
+
+  /// Liefert alle bekannten optionalen Module, die im Skript
+  /// tatsächlich per Namespace.Funktion(...) verwendet werden --
+  /// unabhängig davon, ob sie bereits per #use deklariert sind.
+  ///
+  /// Dient dazu, im Editor nicht mehr benötigte Einträge in #use
+  /// zu erkennen (Modul deklariert, aber im Skript nicht/nicht mehr
+  /// aufgerufen).
+  Set<String> usedOptionalModules(String scriptText) {
+    if (!_loaded) {
+      return {};
+    }
+
+    final lines = scriptText.split('\n');
+
+    final used = <String>{};
+
+    for (final rawLine in lines) {
+      final line = _stripLineComment(rawLine);
+
+      for (final match in _callRegex.allMatches(line)) {
+        final moduleLower = match.group(1)!.toLowerCase();
+
+        if (_optionalModules.contains(moduleLower)) {
+          used.add(moduleLower);
+        }
+      }
+    }
+
+    return used;
   }
 
   /// Liefert nur die tatsächlich unbekannten Namespaces zurück.

@@ -17,17 +17,10 @@ extension _VbxEditorAppRun on _VbxEditorAppState {
     }
 
     final warnings = _usageCheckService.check(tab.controller.text);
+    await _ensureUseDirectivesClean(warnings);
 
-    final optionalWarnings = warnings.where((w) => w.isOptionalModule).toList();
-
-    if (optionalWarnings.isNotEmpty) {
-      _autoInsertUseDirective(optionalWarnings);
-
-      await _saveCurrentFile();
-
-      if (tab.filePath == null || tab.modified) {
-        return;
-      }
+    if (tab.filePath == null || tab.modified) {
+      return;
     }
 
     setState(() {
@@ -148,6 +141,13 @@ extension _VbxEditorAppRun on _VbxEditorAppState {
       return;
     }
 
+    final warnings = _usageCheckService.check(tab.controller.text);
+    await _ensureUseDirectivesClean(warnings);
+
+    if (tab.filePath == null || tab.modified) {
+      return;
+    }
+
     setState(() {
       _isDryRunning = true;
       _runOutput = '';
@@ -183,69 +183,35 @@ extension _VbxEditorAppRun on _VbxEditorAppState {
     tab.focusNode.requestFocus();
   }
 
-  // --- Dialog für fehlende #use-Module (aktuell ungenutzt, da automatisch
-  // eingefügt wird -- bleibt als Baustein für spätere Rückfrage-Option) ---
-  Future<bool?> _showUsageWarningsDialog(List<ModuleUsageIssue> warnings) {
-    return showDialog<bool>(
-      context: _navigatorKey.currentContext!,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Mögliche fehlende #use-Module'),
-          content: SizedBox(
-            width: 400,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Folgende Namespaces werden verwendet, sind aber '
-                  'weder Core-Module noch per #use deklariert:',
-                ),
-                const SizedBox(height: 8),
-                ...warnings.map(
-                  (w) => Padding(
-                    padding: const EdgeInsets.only(bottom: 4),
-                    child: Text(
-                      'Zeile ${w.line}: ${w.module}.${w.function}(...)',
-                      style: const TextStyle(fontFamily: 'Consolas'),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Abbrechen'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('Trotzdem ausführen'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _autoInsertUseDirective(List<ModuleUsageIssue> warnings) {
+  // ------------------------------------------------------------
+  // Vereinheitlichte #use-Bereinigung.
+  //
+  // Läuft IMMER (nicht nur wenn Module fehlen), damit auch doppelte,
+  // über die Datei verstreute ODER nicht mehr benötigte #use-Zeilen
+  // konsolidiert werden.
+  //
+  // Ablauf:
+  //   1. Module aus ALLEN #use-Zeilen sammeln (nicht nur der ersten).
+  //   2. Bekannte optionale Module, die im Skript nicht (mehr)
+  //      verwendet werden, wieder entfernen.
+  //   3. Fehlende, aber tatsächlich verwendete optionale Module
+  //      (aus den warnings) ergänzen.
+  //   4. Alles auf eine einzige #use-Zeile reduzieren (oder die
+  //      Zeile ganz entfernen, falls am Ende nichts übrig bleibt).
+  // ------------------------------------------------------------
+  Future<void> _ensureUseDirectivesClean(
+    List<ModuleUsageIssue> warnings,
+  ) async {
     final tab = _currentTab;
 
     if (tab == null) {
       return;
     }
 
-    // Nur optionale Module dürfen automatisch in #use eingetragen werden.
     final missingModules = warnings
         .where((w) => w.isOptionalModule)
         .map((w) => w.module)
         .toSet();
-
-    // Es gibt nichts einzufügen.
-    if (missingModules.isEmpty) {
-      return;
-    }
 
     final text = tab.controller.text;
     var lines = text.split('\n');
@@ -256,63 +222,84 @@ extension _VbxEditorAppRun on _VbxEditorAppState {
 
     final useDirectiveRegex = RegExp(r'^#use\s+(.*)$', caseSensitive: false);
 
-    // ------------------------------------------------------------
-    // Vorhandene #use-Direktiven suchen.
-    //
-    // Wir akzeptieren nur die erste echte #use-Direktive.
-    // Weitere #use-Zeilen werden entfernt.
-    // ------------------------------------------------------------
-
     final existingModules = <String>{};
-    int? firstUseIndex;
+    final useLineIndices = <int>[];
 
+    // Module aus ALLEN #use-Zeilen sammeln, nicht nur der ersten -
+    // sonst gehen Module aus einer zweiten/dritten #use-Zeile beim
+    // späteren Löschen verloren.
     for (var i = 0; i < lines.length; i++) {
-      final trimmed = lines[i].trim();
-      final match = useDirectiveRegex.firstMatch(trimmed);
+      final match = useDirectiveRegex.firstMatch(lines[i].trim());
 
       if (match == null) {
         continue;
       }
 
-      if (firstUseIndex == null) {
-        firstUseIndex = i;
+      useLineIndices.add(i);
 
-        final modules = match
-            .group(1)!
-            .split(',')
-            .map((m) => m.trim())
-            .where((m) => m.isNotEmpty);
+      final modules = match
+          .group(1)!
+          .split(',')
+          .map((m) => m.trim())
+          .where((m) => m.isNotEmpty);
 
-        existingModules.addAll(modules);
-      }
+      existingModules.addAll(modules);
     }
 
-    // ------------------------------------------------------------
-    // Fehlende optionale Module hinzufügen.
-    // ------------------------------------------------------------
+    // Nicht mehr benötigte optionale Module entfernen. Nur bekannte
+    // optionale Module werden angefasst - unbekannte/getippte Namen
+    // in #use lassen wir bewusst unangetastet, damit hier nichts
+    // "kaputt korrigiert" wird, was der Service nicht sicher kennt.
+    final usedOptional = _usageCheckService.usedOptionalModules(text);
 
+    existingModules.removeWhere((module) {
+      final moduleLower = module.toLowerCase();
+
+      return _usageCheckService.isKnownOptionalModule(moduleLower) &&
+          !usedOptional.contains(moduleLower);
+    });
+
+    // Fehlende, tatsächlich verwendete optionale Module ergänzen.
     existingModules.addAll(missingModules);
 
     final allModules = existingModules.toList()..sort();
+    final newUseLine = allModules.isEmpty
+        ? null
+        : '#use ${allModules.join(',')}';
 
-    final newUseLine = '#use ${allModules.join(',')}';
+    // Nichts zu tun: höchstens eine #use-Zeile vorhanden UND ihr
+    // Inhalt entspricht bereits dem konsolidierten Ergebnis.
+    final needsRewrite =
+        useLineIndices.length > 1 ||
+        (useLineIndices.length == 1 &&
+            lines[useLineIndices.first].trim() != (newUseLine ?? '')) ||
+        (useLineIndices.isEmpty && newUseLine != null);
 
-    // ------------------------------------------------------------
-    // Vorhandene #use-Zeile aktualisieren.
-    // ------------------------------------------------------------
+    if (!needsRewrite) {
+      return;
+    }
 
-    if (firstUseIndex != null) {
+    if (newUseLine == null) {
+      // Alle Module wurden entfernt (keine mehr benötigt, keine
+      // fehlend) -> #use-Zeile(n) komplett entfernen statt sie leer
+      // zu lassen.
+      for (var i = lines.length - 1; i >= 0; i--) {
+        if (useDirectiveRegex.hasMatch(lines[i].trim())) {
+          lines.removeAt(i);
+        }
+      }
+    } else if (useLineIndices.isNotEmpty) {
+      final firstUseIndex = useLineIndices.first;
       lines[firstUseIndex] = newUseLine;
 
       // Alle weiteren #use-Zeilen entfernen.
-      for (var i = lines.length - 1; i > firstUseIndex!; i--) {
+      for (var i = lines.length - 1; i > firstUseIndex; i--) {
         if (useDirectiveRegex.hasMatch(lines[i].trim())) {
           lines.removeAt(i);
         }
       }
     } else {
-      // Keine #use-Zeile vorhanden:
-      // Neue #use-Zeile ganz oben einfügen.
+      // Keine #use-Zeile vorhanden: neue Zeile ganz oben einfügen.
       lines.insert(0, newUseLine);
     }
 
@@ -327,9 +314,9 @@ extension _VbxEditorAppRun on _VbxEditorAppState {
       offset = 0;
     }
 
-    // Wenn eine neue Zeile eingefügt wurde, verschiebt sich der Cursor
-    // um deren Länge.
-    if (firstUseIndex == null) {
+    // Wenn ganz oben eine neue Zeile eingefügt wurde, verschiebt sich
+    // der Cursor um deren Länge.
+    if (useLineIndices.isEmpty && newUseLine != null) {
       offset += newUseLine.length + 1;
     }
 
@@ -342,6 +329,8 @@ extension _VbxEditorAppRun on _VbxEditorAppState {
       selection: TextSelection.collapsed(offset: offset),
       composing: TextRange.empty,
     );
+
+    await _saveCurrentFile();
   }
 
   bool _isUseCommentLine(String trimmedLine) {

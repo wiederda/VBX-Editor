@@ -39,22 +39,30 @@ extension _VbxEditorAppFiles on _VbxEditorAppState {
   }
 
   Future<void> _openFilePath(String path) async {
+    final file = File(path);
+
+    if (!await file.exists()) {
+      return;
+    }
+
     final lower = path.toLowerCase();
     final isKnownExtension = FileService.allowedExtensions.any(
       (ext) => lower.endsWith('.$ext'),
     );
 
     if (!isKnownExtension) {
-      setState(() {
-        _runOutput = 'Dateityp wird nicht unterstützt: ${_fileName(path)}';
-      });
-      return;
-    }
+      // Endung unbekannt (z.B. "backup.txt.old") -- bevor die Datei
+      // abgelehnt wird, den tatsächlichen Inhalt prüfen. Reiner Text
+      // wird trotzdem geöffnet, statt sich rein auf die Endung zu
+      // verlassen.
+      final looksLikeText = await FileService.looksLikeTextFile(file);
 
-    final file = File(path);
-
-    if (!await file.exists()) {
-      return;
+      if (!looksLikeText) {
+        setState(() {
+          _runOutput = 'Dateityp wird nicht unterstützt: ${_fileName(path)}';
+        });
+        return;
+      }
     }
 
     // Ist die Datei bereits geöffnet?
@@ -294,6 +302,36 @@ extension _VbxEditorAppFiles on _VbxEditorAppState {
         _activeTab--;
       } else if (_activeTab >= _tabs.length && _tabs.isNotEmpty) {
         _activeTab = _tabs.length - 1;
+      }
+
+      // Tooltip gehörte ggf. zum gerade geschlossenen Tab -- sonst
+      // bleibt er über dem jetzt sichtbaren, anderen Tab hängen,
+      // obwohl dort gar nichts ausgelöst wurde. Für den neuen aktiven
+      // Tab (falls noch einer übrig ist) neu bestimmen, ob dort ein
+      // Tooltip passt.
+      final newCurrentTab = _currentTab;
+
+      if (newCurrentTab != null) {
+        final result = _findSyntaxAndParamForCursor(newCurrentTab);
+
+        _currentSyntaxInfo = result?.info;
+        _currentParamIndex = result?.paramIndex ?? 0;
+        _activeOpenParenIndex = result?.openParenIndex;
+        _dismissedParenIndex = null;
+
+        if (result != null) {
+          _updateSyntaxHintOverlay(
+            newCurrentTab,
+            result.info,
+            result.paramIndex,
+            newCurrentTab.controller.text,
+            result.openParenIndex,
+          );
+        } else {
+          _syntaxHint.hide();
+        }
+      } else {
+        _syntaxHint.hide();
       }
     });
 

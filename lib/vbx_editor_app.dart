@@ -78,6 +78,14 @@ class _VbxEditorAppState extends State<VbxEditorApp> with WindowListener {
 
   final SyntaxHintController _syntaxHint = SyntaxHintController();
 
+  // Referenz auf die Render-Box des Editor-TextFields. Wird genutzt,
+  // um die Syntax-Hint-Position von der ECHTEN Bildschirmposition des
+  // Feldes abzuleiten, statt sie aus geschätzten Konstanten
+  // (Toolbar-/Tab-Höhe, Gutter-Breite, ...) zusammenzurechnen -- diese
+  // Schätzungen drifteten in der Praxis ab und ließen den Tooltip die
+  // gerade bearbeitete Zeile verdecken.
+  final GlobalKey _editorFieldKey = GlobalKey();
+
   TextSelection? _runOutputSelection;
 
   bool _docsVisible = false;

@@ -76,6 +76,16 @@ extension _VbxEditorAppEditing on _VbxEditorAppState {
         ),
       );
     });
+
+    // Fokus zurück ins Editorfeld holen: der Toolbar-Button hat den
+    // Fokus übernommen, wodurch ein unfokussiertes TextField die
+    // (hier bewusst auf den ganzen bearbeiteten Block erweiterte)
+    // Selektion nicht mehr optisch anzeigt -- obwohl sie intern
+    // weiterhin besteht und _hasSelection/die Buttons dadurch aktiv
+    // bleiben. Ohne requestFocus sieht es so aus, als sei nichts mehr
+    // markiert, obwohl ein erneuter Klick weiterhin denselben
+    // (unsichtbaren) Bereich trifft.
+    tab.focusNode.requestFocus();
   }
 
   void _commentSelectedLines() {

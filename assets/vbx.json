@@ -95,7 +95,9 @@
     "\u003e="
   ],
   "optionalModules": [
+    "7z",
     "ad",
+    "acme",
     "cert",
     "computer",
     "convert",
@@ -105,6 +107,7 @@
     "debug",
     "docker",
     "env",
+    "export",
     "fin",
     "geo",
     "git",
@@ -137,7 +140,7 @@
     "7z": {
       "Create": {
         "description": "Erstellt ein 7z-Archiv über eine 7z-Binary (System-PATH, Standardpfad oder via 7z.SetBinaryPath gesetzt).",
-        "syntax": "7z.Create(archivePath, files()"
+        "syntax": "7z.Create(archivePath, files... [, password])"
       },
       "Extract": {
         "description": "Entpackt ein 7z-Archiv nativ (ohne externes 7z benötigt). Schützt gegen Zip-Slip durch Pfad-Validierung.",
@@ -154,6 +157,16 @@
       "SetBinaryPath": {
         "description": "Legt den Pfad zu einer 7z.exe/7z-Binary explizit fest (z.B. für portable Installationen).",
         "syntax": "7z.SetBinaryPath(path)"
+      }
+    },
+    "acme": {
+      "Account": {
+        "description": "Erstellt oder lädt ein ACME-Konto und gibt die Account-URL zurück.",
+        "syntax": "acme.Account(directory, keyPath, statePath, email, acceptTOS)"
+      },
+      "Issue": {
+        "description": "Fordert vollautomatisch ein Zertifikat per ACME DNS-01 an: lädt/erstellt das ACME-Konto, setzt den DNS-TXT-Eintrag, wartet auf Validierung und speichert das Zertifikat. Gibt True bei Erfolg zurück.",
+        "syntax": "acme.Issue(directory, keyPath, statePath, email, acceptTOS, domain, csrPath, outputPath, provider, token, [dnsServers])"
       }
     },
     "ad": {
@@ -183,7 +196,7 @@
       },
       "Search": {
         "description": "Führt eine rohe LDAP-Suche durch. Gibt ein Array von Maps zurück.",
-        "syntax": "ad.Search(filter [, attrs()"
+        "syntax": "ad.Search(filter [, attrs...])"
       },
       "UserExists": {
         "description": "Prüft ob ein Benutzer im AD existiert. Gibt 'user', 'ambiguous', '' oder ErrorVal zurück.",
@@ -198,6 +211,14 @@
       "ExecutablePath": {
         "description": "Gibt den vollständigen Pfad der ausführbaren Datei zurück.",
         "syntax": "app.ExecutablePath()"
+      },
+      "ScriptDir": {
+        "description": "Gibt das Verzeichnis der aktuell ausgeführten Skript-Datei zurück.",
+        "syntax": "app.ScriptDir()"
+      },
+      "ScriptPath": {
+        "description": "Gibt den vollständigen Pfad des aktuell ausgeführten Skripts zurück.",
+        "syntax": "app.ScriptPath()"
       },
       "SpecialFolder": {
         "description": "Gibt Standardpfade zurück (desktop, home, temp, etc.).",
@@ -247,7 +268,7 @@
       },
       "Create": {
         "description": "Erstellt 1D- oder 2D-Arrays.",
-        "syntax": "array.Create([args()"
+        "syntax": "array.Create([args...])"
       },
       "Find": {
         "description": "Filtert ein Array mit Wildcards (*, ?).",
@@ -256,14 +277,6 @@
       "First": {
         "description": "Gibt das erste Element eines Arrays zurück",
         "syntax": "array.First(array)"
-      },
-      "FromCSV": {
-        "description": "Lädt eine CSV-Datei in ein 2D-Array. Leere Zeilen werden ignoriert. (Default-Separator:",
-        "syntax": "array.FromCSV(path, [sep, exclude])"
-      },
-      "FromXLSX": {
-        "description": "Lädt eine XLSX-Datei in ein Array. Bei einer Spalte wird ein 1D-Array, bei mehreren Spalten ein 2D-Array zurückgegeben. Mit column kann gezielt eine Spalte eingelesen werden. Leere Zeilen werden ignoriert.",
-        "syntax": "array.FromXLSX(path, [sheetName, exclude, column])"
       },
       "IndexOf": {
         "description": "Gibt die Position des ersten Treffers zurück (0-basiert), oder -1 falls nicht gefunden.",
@@ -309,6 +322,10 @@
         "description": "Fügt Element am Anfang ein",
         "syntax": "array.Prepend(arr, value)"
       },
+      "Push": {
+        "description": "Fügt ein Element am Ende des Arrays ein (In-Place).",
+        "syntax": "array.Push(arr, val)"
+      },
       "Remove": {
         "description": "Sucht den Wert im Array und entfernt das erste Vorkommen (In-Place).",
         "syntax": "array.Remove(arr, value)"
@@ -325,13 +342,9 @@
         "description": "Sortiert ein Array (numerisch oder lexikografisch) und gibt eine Kopie zurück",
         "syntax": "array.Sort(array)"
       },
-      "ToCSV": {
-        "description": "Speichert ein Array oder 2D-Array als CSV-Datei. Mit exclude können Zeilen ausgeschlossen und mit append Daten angehängt werden.",
-        "syntax": "array.ToCSV(path, data, [sep, exclude, append])"
-      },
-      "ToXLSX": {
-        "description": "Speichert ein Array oder 2D-Array als XLSX-Datei. Vorhandene Blätter werden standardmäßig ersetzt. Mit append=True werden Daten angehängt. Mit headers können optionale Spaltenüberschriften angegeben werden.",
-        "syntax": "array.ToXLSX(path, data, [sheetName, exclude, append, headers])"
+      "SortBy": {
+        "description": "Sortiert ein Array von Strings anhand eines per Regex extrahierten Schlüssels (erste Capture Group). Gibt eine Kopie der Original-Elemente in sortierter Reihenfolge zurück. Elemente ohne Treffer werden immer ans Ende sortiert (unabhängig von der Richtung). Standard: aufsteigend (A-Z).",
+        "syntax": "array.SortBy(arr, pattern, [desc])"
       },
       "UBound": {
         "description": "Gibt die Obergrenze der angegebenen Dimension zurück (Standard: 1).",
@@ -340,28 +353,28 @@
       "Unique": {
         "description": "Entfernt doppelte Werte (typsicherer Vergleich)",
         "syntax": "array.Unique(array)"
-      },
-      "XLSXSheets": {
-        "description": "Gibt die Namen aller Tabellenblätter einer XLSX-Datei zurück.",
-        "syntax": "array.XLSXSheets(path)"
       }
     },
     "cert": {
       "Combine": {
         "description": "Kombiniert mehrere Zertifikate zu einer PEM-Kette (Chain).",
-        "syntax": "cert.Combine(cert1,()"
+        "syntax": "cert.Combine(cert1, ..., outFile)"
       },
       "CreateCSR": {
         "description": "Erstellt eine Certificate Signing Request (CSR) mit optionalen DNS/IP SANs.",
         "syntax": "cert.CreateCSR(subject, keyPath, outFile [, SANs])"
       },
       "CreateCSRConf": {
-        "description": "Erstellt eine OpenSSL-Konfigurationsdatei mit SAN-Einträgen.",
+        "description": "Erstellt eine CSR auf Basis einer OpenSSL-Konfigurationsdatei (DNS/IP-SANs, inkl. Punycode-Konvertierung).",
         "syntax": "cert.CreateCSRConf(confPath, keyPath, outCSR)"
       },
       "CreateConf": {
         "description": "Assistent (interaktiv) oder Funktion zum Erstellen einer OpenSSL-Konfigurationsdatei.",
         "syntax": "cert.CreateConf([cn, dnsArray, outFile])"
+      },
+      "CreateFromConf": {
+        "description": "Erstellt in einem Schritt einen neuen Private Key und eine CSR basierend auf einer OpenSSL-Konfigurationsdatei (CN/SANs aus cert.CreateConf).",
+        "syntax": "cert.CreateFromConf(confPath, outKey, outCSR [, algo, bits])"
       },
       "CreateSelfSigned": {
         "description": "Erstellt ein selbstsigniertes Zertifikat.",
@@ -390,6 +403,10 @@
       "GetPublicKey": {
         "description": "Extrahiert den öffentlichen Schlüssel aus einem Zertifikat.",
         "syntax": "cert.GetPublicKey(certPath)"
+      },
+      "SelfSignCSR": {
+        "description": "Erstellt aus einer vorhandenen CSR ein selbstsigniertes Zertifikat (Subject/SANs kommen aus der CSR, signiert mit dem zugehörigen Private Key).",
+        "syntax": "cert.SelfSignCSR(csrPath, keyPath, outCert [, days, isCA])"
       },
       "SignCSR": {
         "description": "Signiert eine CSR mit einer CA und erzeugt ein gültiges Zertifikat.",
@@ -421,9 +438,17 @@
         "description": "Beendet das Programm sofort.",
         "syntax": "computer.Exit(code, [msg])"
       },
+      "IsAdmin": {
+        "description": "Prüft auf Administrator-Rechte.",
+        "syntax": "computer.IsAdmin()"
+      },
       "Mount": {
         "description": "Verbindet ein Netzlaufwerk. Gibt [OK, Path, Msg] zurück.",
         "syntax": "computer.Mount(path, [user], [pass], [target])"
+      },
+      "NeedsReboot": {
+        "description": "Prüft, ob ein Neustart erforderlich ist.",
+        "syntax": "computer.NeedsReboot()"
       },
       "NextFreeLetter": {
         "description": "Sucht den nächsten freien Laufwerksbuchstaben (Windows). Gibt [OK, Letter, Msg] zurück.",
@@ -469,69 +494,9 @@
       }
     },
     "crypt": {
-      "AESDecrypt": {
-        "description": "Entschlüsselt AES-GCM Daten. Rückgabe: [OK, Plaintext, Msg]",
-        "syntax": "crypt.AESDecrypt(cipher, pass)"
-      },
-      "AESDecryptFile": {
-        "description": "Entschlüsselt eine mit crypt.AESEncryptFile verschlüsselte Datei und speichert sie unter destPath. Mit deleteSource=true wird die verschlüsselte Quelldatei nach erfolgreicher Entschlüsselung gelöscht (Standard: false). Rückgabe: [OK, Msg]",
-        "syntax": "crypt.AESDecryptFile(sourcePath, destPath, pass [, deleteSource])"
-      },
-      "AESDecryptFileToString": {
-        "description": "Entschlüsselt eine mit crypt.AESEncryptFile verschlüsselte Datei direkt im Speicher und gibt den Inhalt zurück. Die Datei bleibt dabei verschlüsselt auf der Platte - es wird zu keinem Zeitpunkt eine Klartext-Version geschrieben. Rückgabe: [OK, Content, Msg]",
-        "syntax": "crypt.AESDecryptFileToString(sourcePath, pass)"
-      },
-      "AESEncrypt": {
-        "description": "Verschlüsselt Text mit AES-256-GCM. Rückgabe: [OK, CipherBase64, Msg]",
-        "syntax": "crypt.AESEncrypt(text, pass)"
-      },
-      "AESEncryptFile": {
-        "description": "Verschlüsselt eine Datei mit AES-256-GCM und speichert sie unter destPath. Mit deleteSource=true wird die Original-Datei nach erfolgreicher Verschlüsselung gelöscht (Standard: false). Rückgabe: [OK, Msg]",
-        "syntax": "crypt.AESEncryptFile(sourcePath, destPath, pass [, deleteSource])"
-      },
-      "Bcrypt": {
-        "description": "Erzeugt einen sicheren Bcrypt-Hash eines Passworts. cost: 4-31, Standard 10.",
-        "syntax": "crypt.Bcrypt(pass, [cost])"
-      },
-      "BcryptVerify": {
-        "description": "Prüft ob ein Passwort zu einem Bcrypt-Hash passt.",
-        "syntax": "crypt.BcryptVerify(pass, hash)"
-      },
-      "BytesToString": {
-        "description": "Wandelt ein Byte-Array (0-255 Werte) in einen UTF-8-String um. Für kurzzeitige Verwendung gedacht - danach crypt.Wipe auf das Byte-Array anwenden.",
-        "syntax": "crypt.BytesToString(byteArray)"
-      },
-      "CheckPassword": {
-        "description": "Prüft ein vom Nutzer gewähltes Passwort gegen konfigurierbare Regeln (Mindestlänge, Groß-/Kleinschreibung, Ziffern, Sonderzeichen). Gibt eine Map mit Detail-Ergebnissen zurück, statt das Passwort blind zu übernehmen.",
-        "syntax": "crypt.CheckPassword(password [, minLength] [, maxLength] [, requireUpper] [, requireLower] [, requireDigit] [, requireSpecial])"
-      },
-      "GUID": {
-        "description": "Generiert eine eindeutige GUID.",
-        "syntax": "crypt.GUID()"
-      },
-      "HMAC": {
-        "description": "Erzeugt einen HMAC. algo: sha256 (Standard), sha512, sha1, md5.",
-        "syntax": "crypt.HMAC(s, key, [algo])"
-      },
-      "RNGCryptoProvider": {
-        "description": "Erzeugt kryptografisch sichere Zufallsbytes und gibt sie als Hex-String zurück.",
-        "syntax": "crypt.RNGCryptoProvider(length)"
-      },
-      "RandomPassword": {
-        "description": "Generiert ein komplexes Zufallspasswort.",
-        "syntax": "crypt.RandomPassword(len, [num], [low], [up], [spec], [head])"
-      },
-      "RandomString": {
-        "description": "Erzeugt eine zufällige alphanumerische Zeichenfolge (min. 10 Zeichen).",
-        "syntax": "crypt.RandomString(length)"
-      },
-      "Wipe": {
-        "description": "Überschreibt ein Byte-Array (z.B. von reg.ReadProtectedValueBytes) in-place mit Nullen. Sollte aufgerufen werden, sobald ein entschlüsselter Wert nicht mehr benötigt wird.",
-        "syntax": "crypt.Wipe(byteArray)"
-      },
-      "WipeString": {
-        "description": "Überschreibt den Speicherinhalt eines Strings mit Nullbytes (0x00). Im Gegensatz zu 'x = \"\"' wird hier der tatsächliche RAM-Inhalt gelöscht, nicht nur die Variable umgebogen. Nach dem Aufruf enthält die Variable eine Zeichenkette gleicher Länge, aber nur aus Nullbytes.",
-        "syntax": "crypt.WipeString(value)"
+      "\u001b[37m": {
+        "description": "",
+        "syntax": "\u001b[37m(Keine exakten Treffer gefunden)"
       }
     },
     "data": {
@@ -548,12 +513,16 @@
         "syntax": "data.DaysToSeconds(val)"
       },
       "FormatSeconds": {
-        "description": "Formatiert Sekunden in HH:MM:SS.",
+        "description": "Formatiert Sekunden als HH:MM:SS.",
         "syntax": "data.FormatSeconds(seconds)"
       },
       "GbToTb": {
         "description": "Konvertiert Gigabyte in Terabyte (1000).",
         "syntax": "data.GbToTb(val)"
+      },
+      "GiBToTiB": {
+        "description": "Konvertiert Gibibyte in Tebibyte (1024).",
+        "syntax": "data.GiBToTiB(val)"
       },
       "HoursToMinutes": {
         "description": "Konvertiert Stunden in Minuten.",
@@ -563,6 +532,10 @@
         "description": "Konvertiert Kilobyte in Megabyte (1000).",
         "syntax": "data.KbToMb(val)"
       },
+      "KiBToMiB": {
+        "description": "Konvertiert Kibibyte in Mebibyte (1024).",
+        "syntax": "data.KiBToMiB(val)"
+      },
       "KilowattToWatt": {
         "description": "Konvertiert Kilowatt in Watt.",
         "syntax": "data.KilowattToWatt(val)"
@@ -571,9 +544,9 @@
         "description": "Konvertiert Megabyte in Gigabyte (1000).",
         "syntax": "data.MbToGb(val)"
       },
-      "MiBToByte": {
-        "description": "Konvertiert Mebibyte in Byte (1024^2).",
-        "syntax": "data.MiBToByte(val)"
+      "MiBToGiB": {
+        "description": "Konvertiert Mebibyte in Gibibyte (1024).",
+        "syntax": "data.MiBToGiB(val)"
       },
       "MinutesToHours": {
         "description": "Konvertiert Minuten in Stunden.",
@@ -582,14 +555,6 @@
       "SecondsToDays": {
         "description": "Konvertiert Sekunden in Tage.",
         "syntax": "data.SecondsToDays(val)"
-      },
-      "TimerElapsed": {
-        "description": "Gibt Sekunden seit Start zurück.",
-        "syntax": "data.TimerElapsed([name])"
-      },
-      "TimerStart": {
-        "description": "Startet eine Zeitmessung.",
-        "syntax": "data.TimerStart([name])"
       },
       "WattToKilowatt": {
         "description": "Konvertiert Watt in Kilowatt.",
@@ -849,7 +814,7 @@
       },
       "SyncTables": {
         "description": "Synchronisiert mehrere Tabellen (nutzt intern den Default-batchSize von 500). Schreibt nur bei echter inhaltlicher Änderung.",
-        "syntax": "db.SyncTables(sourceAlias, targetAlias, table1, table2,()"
+        "syntax": "db.SyncTables(sourceAlias, targetAlias, table1, table2, ...)"
       },
       "TableExists": {
         "description": "Prüft, ob eine Tabelle existiert.",
@@ -857,6 +822,18 @@
       }
     },
     "debug": {
+      "AllocBytes": {
+        "description": "Gibt die seit AllocStart allokierten Bytes zurück.",
+        "syntax": "debug.AllocBytes()"
+      },
+      "AllocCount": {
+        "description": "Gibt die seit AllocStart durchgeführten Heap-Allokationen zurück.",
+        "syntax": "debug.AllocCount()"
+      },
+      "AllocStart": {
+        "description": "Startet die Messung der Heap-Allokationen.",
+        "syntax": "debug.AllocStart()"
+      },
       "Assert": {
         "description": "Prüft eine Bedingung und bricht bei 'False' mit Fehlermeldung ab.",
         "syntax": "debug.Assert(condition, [msg])"
@@ -908,127 +885,127 @@
     },
     "docker": {
       "ComposeDown": {
-        "description": "Stoppt und entfernt Compose-Dienste. removeVolumes=true löscht auch Volumes.",
+        "description": "Stoppt und entfernt einen Docker-Compose-Stack.",
         "syntax": "docker.ComposeDown(path, [removeVolumes])"
       },
       "ComposeLogs": {
-        "description": "Gibt die Logs aller Compose-Dienste zurück.",
+        "description": "Gibt die Logs eines Docker-Compose-Stacks zurück.",
         "syntax": "docker.ComposeLogs(path, [lines])"
       },
       "ComposePull": {
-        "description": "Aktualisiert alle Images einer Compose-Datei.",
+        "description": "Lädt die Images eines Docker-Compose-Stacks herunter.",
         "syntax": "docker.ComposePull(path)"
       },
       "ComposeRestart": {
-        "description": "Startet alle Dienste einer Compose-Datei neu.",
+        "description": "Startet einen Docker-Compose-Stack neu.",
         "syntax": "docker.ComposeRestart(path)"
       },
       "ComposeUp": {
-        "description": "Startet Dienste via docker compose. detach=true (Default) für Hintergrund.",
+        "description": "Startet einen Docker-Compose-Stack.",
         "syntax": "docker.ComposeUp(path, [detach])"
       },
       "Exec": {
-        "description": "Führt einen Befehl in einem laufenden Container aus.",
-        "syntax": "docker.Exec(name, cmd, [args()"
+        "description": "Führt einen Befehl innerhalb eines laufenden Containers aus.",
+        "syntax": "docker.Exec(name, cmd, [args...])"
       },
       "ExportCompose": {
-        "description": "Exportiert einen laufenden Container als docker-compose.yml. Gibt YAML-String zurück oder schreibt in Datei.",
+        "description": "Erzeugt aus einem Docker-Container eine Docker-Compose-Konfiguration und gibt sie zurück oder schreibt sie in eine Datei.",
         "syntax": "docker.ExportCompose(name, [outputPath])"
       },
       "ImageBuild": {
-        "description": "Baut ein Image aus einem Dockerfile. dockerfile optional (Default: Dockerfile).",
+        "description": "Baut ein Docker Image aus einem Build-Kontext.",
         "syntax": "docker.ImageBuild(path, tag, [dockerfile])"
       },
       "ImageList": {
-        "description": "Gibt ein Array aller lokalen Images zurück.",
+        "description": "Listet vorhandene Docker Images auf.",
         "syntax": "docker.ImageList()"
       },
       "ImagePrune": {
-        "description": "Löscht alle ungenutzten (dangling) Images.",
+        "description": "Entfernt nicht verwendete Docker Images.",
         "syntax": "docker.ImagePrune()"
       },
       "ImagePull": {
-        "description": "Lädt ein Image von Docker Hub oder einer Registry.",
+        "description": "Lädt ein Docker Image aus einer Registry.",
         "syntax": "docker.ImagePull(image)"
       },
       "ImageRemove": {
-        "description": "Löscht ein lokales Image.",
+        "description": "Entfernt ein Docker Image.",
         "syntax": "docker.ImageRemove(image, [force])"
       },
       "ImageRemoveAll": {
-        "description": "Löscht alle ungenutzten Images (auch nicht-dangling). Container müssen gestoppt sein.",
+        "description": "Entfernt alle vorhandenen Docker Images.",
         "syntax": "docker.ImageRemoveAll()"
       },
       "Inspect": {
-        "description": "Gibt die vollständigen Metadaten eines Containers als String zurück.",
+        "description": "Gibt die vollständigen Docker-Inspect-Daten eines Containers zurück.",
         "syntax": "docker.Inspect(name)"
       },
       "IsInstalled": {
-        "description": "Gibt True zurück wenn Docker installiert und erreichbar ist.",
+        "description": "Prüft, ob Docker installiert und erreichbar ist.",
         "syntax": "docker.IsInstalled()"
       },
       "IsRunning": {
-        "description": "Gibt True zurück wenn der Container läuft.",
+        "description": "Prüft, ob ein Docker-Container läuft.",
         "syntax": "docker.IsRunning(name)"
       },
       "List": {
-        "description": "Gibt ein Array aller Container zurück. all=true zeigt auch gestoppte.",
+        "description": "Listet Docker-Container auf. Mit all=True werden auch gestoppte Container angezeigt.",
         "syntax": "docker.List([all])"
       },
       "Login": {
-        "description": "Authentifiziert an einer Docker Registry.",
+        "description": "Meldet sich mit einem Benutzer und Token an einer Docker Registry an.",
         "syntax": "docker.Login(registry, username, token)"
       },
       "Logout": {
-        "description": "Abmelden von einer Docker Registry.",
+        "description": "Meldet sich von einer Docker Registry ab.",
         "syntax": "docker.Logout(registry)"
       },
       "Logs": {
-        "description": "Gibt die letzten Logzeilen eines Containers zurück. Default: 50 Zeilen.",
+        "description": "Gibt die letzten Logzeilen eines Containers zurück.",
         "syntax": "docker.Logs(name, [lines])"
       },
       "NetworkList": {
-        "description": "Gibt ein Array aller Docker-Netzwerke zurück.",
+        "description": "Listet Docker-Netzwerke auf.",
         "syntax": "docker.NetworkList()"
       },
       "Remove": {
-        "description": "Entfernt einen Container. force=true erzwingt das Löschen.",
+        "description": "Entfernt einen Docker-Container.",
         "syntax": "docker.Remove(name, [force])"
       },
       "Restart": {
-        "description": "Startet einen Container neu.",
+        "description": "Startet einen Docker-Container neu.",
         "syntax": "docker.Restart(name, [timeout])"
       },
       "Run": {
-        "description": "Startet einen neuen Container aus einem Image.",
+        "description": "Startet einen Docker-Container im Hintergrund.",
         "syntax": "docker.Run(image, [name], [options], [command])"
       },
       "Start": {
-        "description": "Startet einen Container.",
+        "description": "Startet einen gestoppten Docker-Container.",
         "syntax": "docker.Start(name)"
       },
       "Stats": {
-        "description": "Gibt CPU/RAM-Nutzung zurück. Ohne Name alle Container.",
+        "description": "Gibt die aktuellen Ressourcenstatistiken eines Containers oder aller Container zurück.",
         "syntax": "docker.Stats([name])"
       },
       "Status": {
-        "description": "Gibt den Status eines Containers zurück (running, exited, etc.).",
+        "description": "Gibt den Status eines Docker-Containers zurück.",
         "syntax": "docker.Status(name)"
       },
       "Stop": {
-        "description": "Stoppt einen Container. Timeout in Sekunden (Default: 10).",
+        "description": "Stoppt einen Docker-Container.",
         "syntax": "docker.Stop(name, [timeout])"
       },
       "SystemPrune": {
-        "description": "Räumt ungenutzte Ressourcen auf. all=true entfernt auch ungenutzte Images.",
+        "description": "Entfernt nicht verwendete Docker-Ressourcen.",
         "syntax": "docker.SystemPrune([all])"
       },
       "Version": {
-        "description": "Gibt die installierte Docker-Version zurück.",
+        "description": "Gibt die Version des Docker Servers zurück.",
         "syntax": "docker.Version()"
       },
       "VolumeList": {
-        "description": "Gibt ein Array aller Docker-Volumes zurück.",
+        "description": "Listet Docker-Volumes auf.",
         "syntax": "docker.VolumeList()"
       }
     },
@@ -1044,6 +1021,28 @@
       "Set": {
         "description": "Setzt eine Umgebungsvariable für den aktuellen Prozess. Gibt True bei Erfolg zurück.",
         "syntax": "env.Set(key, value)"
+      }
+    },
+    "export": {
+      "FromCSV": {
+        "description": "Lädt eine CSV-Datei in ein 2D-Array. Leere Zeilen werden ignoriert. (Default-Separator: ;)",
+        "syntax": "export.FromCSV(path, [sep, exclude])"
+      },
+      "FromXLSX": {
+        "description": "Lädt eine XLSX-Datei in ein Array. Bei einer Spalte wird ein 1D-Array, bei mehreren Spalten ein 2D-Array zurückgegeben. Mit column kann gezielt eine Spalte eingelesen werden. Leere Zeilen werden ignoriert.",
+        "syntax": "export.FromXLSX(path, [sheetName, exclude, column])"
+      },
+      "ToCSV": {
+        "description": "Speichert ein Array oder 2D-Array als CSV-Datei. Mit exclude können Zeilen ausgeschlossen und mit append Daten angehängt werden.",
+        "syntax": "export.ToCSV(path, data, [sep, exclude, append])"
+      },
+      "ToXLSX": {
+        "description": "Speichert ein Array oder 2D-Array als XLSX-Datei. Vorhandene Blätter werden standardmäßig ersetzt. Mit append=True werden Daten angehängt. Mit headers können optionale Spaltenüberschriften angegeben werden.",
+        "syntax": "export.ToXLSX(path, data, [sheetName, exclude, append, headers])"
+      },
+      "XLSXSheets": {
+        "description": "Gibt die Namen aller Tabellenblätter einer XLSX-Datei zurück.",
+        "syntax": "export.XLSXSheets(path)"
       }
     },
     "file": {
@@ -1072,8 +1071,8 @@
         "syntax": "file.Compare(pfad1, pfad2)"
       },
       "Copy": {
-        "description": "Kopiert eine Datei (kein Überschreiben ohne Fehler).",
-        "syntax": "file.Copy(src, dst)"
+        "description": "Kopiert eine Datei. Mit overwrite=true wird ein bestehendes Ziel überschrieben, sonst schlägt der Aufruf fehl, falls es existiert.",
+        "syntax": "file.Copy(src, dst, [overwrite])"
       },
       "Create": {
         "description": "Erstellt eine leere Datei, falls diese noch nicht existiert.",
@@ -1097,11 +1096,15 @@
       },
       "Exists": {
         "description": "Prüft, ob eine Datei existiert.",
-        "syntax": "file.Exists(bool)"
+        "syntax": "file.Exists(path)"
       },
       "Ext": {
         "description": "Gibt die Dateiendung zurück.",
         "syntax": "file.Ext(pfad)"
+      },
+      "FindWords": {
+        "description": "Sucht beliebige Wörter in einer Datei und schreibt alle Trefferzeilen mit Zeilennummer in eine Ausgabedatei.",
+        "syntax": "file.FindWords(words, inputFile, outputFile)"
       },
       "GetDuplicates": {
         "description": "Findet doppelte Zeilen und gibt sie als Array zurück (alphabetisch sortiert).",
@@ -1115,6 +1118,10 @@
         "description": "Prüft, ob eine Datei existiert und mehr als 0 Byte Inhalt hat. Gibt bei nicht existierender Datei false zurück.",
         "syntax": "file.HasContent(pfad)"
       },
+      "Hash": {
+        "description": "Berechnet den Hash-Wert einer Datei und gibt ihn als Hex-String zurück.",
+        "syntax": "file.Hash(path [, algo])"
+      },
       "HashBatch": {
         "description": "Berechnet Hashes mehrerer Dateien parallel. Gibt eine Map path-\u003ehash zurück.",
         "syntax": "file.HashBatch(paths [, algo, workers])"
@@ -1127,9 +1134,13 @@
         "description": "Gibt die ersten n Zeilen einer Datei zurück.",
         "syntax": "file.Head(path, n)"
       },
+      "InsertAfter": {
+        "description": "Fügt in jeder Zeile nach der ersten Fundstelle des Suchtextes den angegebenen Text ein. Ist der Ausgabepfad leer, wird die Originaldatei überschrieben.",
+        "syntax": "file.InsertAfter(pfad, ausgabepfad, suchtext, einfügen)"
+      },
       "Join": {
         "description": "Verbindet beliebig viele Pfadsegmente sicher miteinander.",
-        "syntax": "file.Join(pfad, teil,()"
+        "syntax": "file.Join(pfad, teil, ...)"
       },
       "LineCount": {
         "description": "Gibt die Anzahl der Zeilen einer Textdatei zurück.",
@@ -1140,8 +1151,8 @@
         "syntax": "file.ModTime(path)"
       },
       "Move": {
-        "description": "Verschiebt oder benennt eine Datei um (Rename + Cross-Drive Fallback).",
-        "syntax": "file.Move(src, dst)"
+        "description": "Verschiebt oder benennt eine Datei um (Rename + Cross-Drive Fallback). Mit overwrite=true wird ein bestehendes Ziel überschrieben, sonst schlägt der Aufruf fehl, falls es existiert.",
+        "syntax": "file.Move(src, dst, [overwrite])"
       },
       "Name": {
         "description": "Gibt den Dateinamen ohne Verzeichnispfad zurück.",
@@ -1198,6 +1209,10 @@
       "Tail": {
         "description": "Zeigt die letzten Zeilen einer Datei an. Bei 'refresh' (z.B. '1s') wird die Datei live überwacht. Mit silent=True: kein Print, gibt stattdessen einmalig true/false zurück (für Skript-Nutzung in einer eigenen Schleife).",
         "syntax": "file.Tail(path, [lines], [refresh], [silent])"
+      },
+      "TextStats": {
+        "description": "Zählt Wörter, Zeichen (ohne Leerzeichen) und Leerzeichen im Inhalt einer Datei.",
+        "syntax": "file.TextStats(path)"
       },
       "UniqueLines": {
         "description": "Entfernt doppelte Zeilen aus einer Datei.",
@@ -1280,8 +1295,8 @@
         "syntax": "folder.CheckHash(groupsArray [, progress])"
       },
       "Copy": {
-        "description": "Kopiert einen Ordner rekursiv. progress=True zeigt Fortschritt. network=True optimiert für Netzwerk-Transfers.",
-        "syntax": "folder.Copy(src, dst, [progress], [network])"
+        "description": "Kopiert einen Ordner rekursiv. progress=True zeigt Fortschritt. network=True optimiert für Netzwerk-Transfers. failIfExists=True bricht ab, wenn dst bereits existiert (Standard: es wird in ein vorhandenes Ziel hineingemergt/überschrieben).",
+        "syntax": "folder.Copy(src, dst, [progress], [network], [failIfExists])"
       },
       "Count": {
         "description": "Gibt Anzahl Ordner, Dateien und Gesamtgröße zurück.",
@@ -1336,12 +1351,12 @@
         "syntax": "folder.ModTime(path)"
       },
       "Move": {
-        "description": "Verschiebt einen Ordner (Rename mit Fallback auf Copy/Delete).",
-        "syntax": "folder.Move(src, dst)"
+        "description": "Verschiebt einen Ordner (Rename mit Fallback auf Copy/Delete). failIfExists=True bricht ab, wenn dst bereits existiert (Standard: es wird ggf. in ein vorhandenes Ziel hineingemergt).",
+        "syntax": "folder.Move(src, dst, [failIfExists])"
       },
       "PathCombine": {
         "description": "Verbindet mehrere Pfadsegmente sicher zu einem Gesamtpfad.",
-        "syntax": "folder.PathCombine(parts()"
+        "syntax": "folder.PathCombine(parts...)"
       },
       "Rename": {
         "description": "Benennt einen Ordner um (auf demselben Volume).",
@@ -1457,6 +1472,14 @@
         "description": "Verschlüsselt ein VB-Skript mit Magic Header.",
         "syntax": "Build(quelle)"
       },
+      "CanRun": {
+        "description": "Prüft, ob ein Skript syntaktisch gültig ist und keine unbekannten Aufrufe enthält, OHNE es auszuführen. Gibt True zurück wenn sauber, sonst einen Error-Wert (prüfbar mit IsError/ErrorText) - entweder mit der Anzahl gefundener Warnungen oder dem Parse-/Sicherheitsfehler.",
+        "syntax": "CanRun(path)"
+      },
+      "CanRunString": {
+        "description": "Prüft VBX-Quelltext direkt aus einem String (z.B. gerade heruntergeladen, noch nicht gespeichert), OHNE ihn auszuführen oder zu speichern. label wird nur in Fehlermeldungen verwendet. Gibt True zurück wenn sauber, sonst einen Error-Wert (IsError/ErrorText).",
+        "syntax": "CanRunString(content, [label])"
+      },
       "Chr": {
         "description": "Gibt das Zeichen zum Unicode-Wert zurück.",
         "syntax": "Chr(code)"
@@ -1503,7 +1526,7 @@
       },
       "GC": {
         "description": "Erzwingt den Garbage Collector, um ungenutzten Speicher sofort freizugeben.",
-        "syntax": "GC()"
+        "syntax": "GC(-)"
       },
       "InStr": {
         "description": "Gibt die 1-basierte Position eines Teilstrings zurück oder 0, wenn nicht gefunden.",
@@ -1577,9 +1600,17 @@
         "description": "Gibt die Anzahl der Zeichen zurück.",
         "syntax": "Length(s)"
       },
+      "LoadModule": {
+        "description": "Lädt ein optionales Modul (nativ oder als WASM-Plugin) zur Laufzeit. Gibt True zurück bei Erfolg (auch wenn bereits geladen), sonst einen Error-Wert (prüfbar mit IsError/ErrorText).",
+        "syntax": "LoadModule(name)"
+      },
       "MD5": {
         "description": "Erzeugt einen MD5-Hash des übergebenen Textes.",
         "syntax": "MD5(s)"
+      },
+      "Mid": {
+        "description": "Gibt einen Teilstring ab der angegebenen Position zurück.",
+        "syntax": "Mid(text, start [, length])"
       },
       "OS": {
         "description": "Gibt die Prozessor-Architektur zurück (z.B. amd64).",
@@ -1605,9 +1636,9 @@
         "description": "Ersetzt alle Vorkommen eines Teilstrings im Text.",
         "syntax": "Replace(s, find, repl)"
       },
-      "ReplaceVars": {
-        "description": "Ersetzt mehrere Platzhalter in einem Text.",
-        "syntax": "ReplaceVars(text, key/value pairs)"
+      "ReplaceMany": {
+        "description": "Ersetzt mehrere Teilstrings in einem Text.",
+        "syntax": "ReplaceMany(text, find1, repl1, ...)"
       },
       "Right": {
         "description": "Extrahiert n Zeichen von rechts.",
@@ -1625,9 +1656,13 @@
         "description": "Erzeugt einen hochsicheren SHA512-Hash.",
         "syntax": "SHA512(s)"
       },
+      "Sleep": {
+        "description": "Pausiert die Ausführung. ENTER überspringt. showOutput (bool) steuert die Anzeige.",
+        "syntax": "Sleep(wert, [einheit], [showOutput])"
+      },
       "Split": {
-        "description": "Zerlegt einen String in ein Array (Standard-Separator: Leerzeichen oder Komma)",
-        "syntax": "Split(s, [sep])"
+        "description": "Zerlegt einen String an einem Separator in ein Array",
+        "syntax": "Split(s, sep)"
       },
       "Substring": {
         "description": "Gibt einen Teilstring zurück (0-basiert).",
@@ -1702,7 +1737,7 @@
         "syntax": "UserDomain()"
       },
       "UserName": {
-        "description": "",
+        "description": "Aktueller Benutzername.",
         "syntax": "UserName()"
       },
       "Wait": {
@@ -1720,35 +1755,35 @@
     },
     "ini": {
       "Delete": {
-        "description": "Löscht einen Key oder eine ganze Sektion. Änderungen werden sofort gespeichert.",
+        "description": "Löscht einen Key oder eine komplette Sektion.",
         "syntax": "ini.Delete(section [, key])"
       },
       "Exists": {
-        "description": "Prüft, ob ein Key in einer Sektion existiert und nicht leer ist. Gibt true oder false zurück.",
+        "description": "Prüft, ob ein Key in einer Sektion existiert.",
         "syntax": "ini.Exists(section, key)"
       },
       "Get": {
-        "description": "Liest einen Wert aus einer Sektion. Gibt den Default-Wert (oder leer) zurück, falls nicht gefunden.",
+        "description": "Liest einen Wert aus einer Sektion.",
         "syntax": "ini.Get(section, key [, default])"
       },
       "Keys": {
-        "description": "Gibt ein sortiertes Array mit allen Keys einer bestimmten Sektion zurück.",
+        "description": "Gibt alle Keys einer Sektion als Array zurück.",
         "syntax": "ini.Keys(section)"
       },
       "Load": {
-        "description": "Lädt eine INI-Datei in den Speicher. Erstellt einen leeren Cache, falls die Datei nicht existiert.",
+        "description": "Lädt eine INI-Datei in den Speicher.",
         "syntax": "ini.Load(filename)"
       },
       "Save": {
-        "description": "Schreibt alle ausstehenden Änderungen manuell in die Datei (nützlich nach ini.Set mit autosave=false).",
+        "description": "Speichert die aktuellen Änderungen in die INI-Datei.",
         "syntax": "ini.Save()"
       },
       "Sections": {
-        "description": "Gibt ein sortiertes Array mit allen Sektionsnamen der geladenen INI-Datei zurück.",
+        "description": "Gibt alle Sektionsnamen als Array zurück.",
         "syntax": "ini.Sections()"
       },
       "Set": {
-        "description": "Setzt einen Wert. 'autosave' (Standard: true) schreibt Änderungen sofort in die Datei.",
+        "description": "Setzt einen Wert in einer Sektion.",
         "syntax": "ini.Set(section, key, value [, autosave])"
       }
     },
@@ -1823,15 +1858,15 @@
       },
       "SearchDeepWhereGet": {
         "description": "Rekursive Suche in JSON nach Objekten mit Bedingungen und Rückgabewert.",
-        "syntax": "json.SearchDeepWhereGet(jsonStr, returnKey, cond1, cond2,()"
+        "syntax": "json.SearchDeepWhereGet(jsonStr, returnKey, cond1, cond2, ...)"
       },
       "SearchWhereExists": {
         "description": "Gibt true zurück, wenn mindestens ein Objekt alle Bedingungen erfüllt.",
-        "syntax": "json.SearchWhereExists(jsonStr, cond1, cond2,()"
+        "syntax": "json.SearchWhereExists(jsonStr, cond1, cond2, ...)"
       },
       "SearchWhereGet": {
         "description": "Findet das erste Objekt, das alle Bedingungen erfüllt, und gibt einen bestimmten Key zurück.",
-        "syntax": "json.SearchWhereGet(jsonStr, returnKey, cond1, cond2,()"
+        "syntax": "json.SearchWhereGet(jsonStr, returnKey, cond1, cond2, ...)"
       },
       "Set": {
         "description": "Setzt einen Wert im geladenen Objekt. Erstellt fehlende Zwischenknoten automatisch.",
@@ -2078,7 +2113,7 @@
         "syntax": "net.Get(url, [token], [retries], [baseDelayMs], [maxDelayMs])"
       },
       "Html": {
-        "description": "Ersetzt Sonderzeichen wie Umlaute und HTML-Tags durch Entities (z.B. \u0026auml",
+        "description": "Ersetzt Sonderzeichen wie Umlaute und HTML-Tags durch Entities (z.B. \u0026auml;).",
         "syntax": "net.Html(text)"
       },
       "IPIsValid": {
@@ -2122,11 +2157,11 @@
         "syntax": "net.ResolveAll(host)"
       },
       "Status": {
-        "description": "Gibt den HTTP-Status der letzten Anfrage zurück oder prüft eine neue URL (HEAD-Request)",
-        "syntax": "net.Status()"
+        "description": ".) If net.Status(\"https://google.de\") = 200 Then Print \"Online\"",
+        "syntax": "net.Status(Gibt den HTTP-Status der letzten Anfrage zurück oder prüft eine neue URL (HEAD-Request)"
       },
       "WakeOnLan": {
-        "description": "Sendet ein Wake-on-LAN Magic Packet per UDP-Broadcast. mac Formate XX:XX:XX:XX:XX:XX, XX-XX-XX-XX-XX-XX oder ohne Trennzeichen.",
+        "description": "Sendet ein Wake-on-LAN Magic Packet per UDP-Broadcast. mac akzeptiert die Formate XX:XX:XX:XX:XX:XX, XX-XX-XX-XX-XX-XX oder ohne Trennzeichen.",
         "syntax": "net.WakeOnLan(mac, [broadcastIP], [port])"
       }
     },
@@ -2209,11 +2244,11 @@
       },
       "GenerateKeyPair": {
         "description": "Erzeugt ein ML-KEM-768 Schlüsselpaar. Rückgabe: [pubB64, privB64].",
-        "syntax": "pqc.GenerateKeyPair()"
+        "syntax": "pqc.GenerateKeyPair(-)"
       },
       "GenerateSigKeyPair": {
         "description": "Erzeugt ein ML-DSA-65 Signatur-Schlüsselpaar. Rückgabe: [pubB64, privB64].",
-        "syntax": "pqc.GenerateSigKeyPair()"
+        "syntax": "pqc.GenerateSigKeyPair(-)"
       },
       "ImportKey": {
         "description": "Lädt einen ML-KEM Private Key aus einer Datei (optional entschlüsselt).",
@@ -2263,15 +2298,15 @@
       },
       "Exec": {
         "description": "Führt Befehl aus und wartet. Output geht direkt an die Konsole.",
-        "syntax": "proc.Exec(cmd, [args()"
+        "syntax": "proc.Exec(cmd, [args...])"
       },
       "ExecEx": {
         "description": "Führt Befehl aus und liefert [Full, Stdout, Stderr, ExitCode]",
-        "syntax": "proc.ExecEx(cmd, timeout, args()"
+        "syntax": "proc.ExecEx(cmd, timeout, args...)"
       },
       "ExecInteractive": {
         "description": "Führt Befehl aus und reagiert automatisch auf Prompts. responses = Array von [muster, antwort] Paaren. Rückgabe: [Full, Stdout, Stderr, ExitCode]",
-        "syntax": "proc.ExecInteractive(cmd, timeout, responses, args()"
+        "syntax": "proc.ExecInteractive(cmd, timeout, responses, args...)"
       },
       "ExistsByName": {
         "description": "Prüft, ob ein Prozessname (z.B. 'init' oder 'System') aktiv ist.",
@@ -2355,7 +2390,7 @@
       },
       "Start": {
         "description": "Startet ein Programm im Hintergrund und gibt die neue PID zurück.",
-        "syntax": "proc.Start(path, [args()"
+        "syntax": "proc.Start(path, [args...])"
       },
       "Tasklist": {
         "description": "Gibt eine Liste aller laufenden Prozesse als Text zurück.",
@@ -2373,7 +2408,7 @@
     "rand": {
       "Bool": {
         "description": "Gibt zufällig true oder false zurück.",
-        "syntax": "rand.Bool()"
+        "syntax": "rand.Bool(-)"
       },
       "Choice": {
         "description": "Wählt ein zufälliges Element aus einem Array aus.",
@@ -2384,7 +2419,7 @@
         "syntax": "rand.Float(-)"
       },
       "Range": {
-        "description": "Gibt eine Ganzzahl zwischen min und max (inklusive) zurück.",
+        "description": "Gibt eine Ganzzahl zwischen min und max inklusive zurück.",
         "syntax": "rand.Range(min, max)"
       },
       "RangeFloat": {
@@ -2392,7 +2427,7 @@
         "syntax": "rand.RangeFloat(min, max)"
       },
       "Seed": {
-        "description": "Initialisiert den Zufallsgenerator mit einem Startwert",
+        "description": "Initialisiert den Zufallsgenerator mit einem Startwert.",
         "syntax": "rand.Seed([n])"
       }
     },
@@ -2518,7 +2553,7 @@
         "syntax": "ssh.Close(alias)"
       },
       "Connect": {
-        "description": "Öffnet eine SSH-Verbindung per Key-Auth und speichert sie unter einem Alias für nachfolgende ssh.Exec-Aufrufe. knownHostsPath optional - ohne Angabe wird der Host-Key nicht geprüft (InsecureIgnoreHostKey)",
+        "description": "Öffnet eine SSH-Verbindung per Key-Auth und speichert sie unter einem Alias für nachfolgende ssh.Exec-Aufrufe. knownHostsPath optional - ohne Angabe wird der Host-Key nicht geprüft (InsecureIgnoreHostKey); mit Angabe wird er wie bei sftp.Connect gegen eine known_hosts-Datei geprüft (Trust-on-First-Use). port default 22. keyPath zeigt auf den privaten Key lokal.",
         "syntax": "ssh.Connect(host, user, keyPath, alias, [knownHostsPath], [port])"
       },
       "Exec": {
@@ -2534,25 +2569,25 @@
         "syntax": "ssh.GenerateSSHKey([outFile, algo, bits, pass])"
       },
       "RebootWithKey": {
-        "description": "Löst per SSH-Key-Authentifizierung einen Reboot auf einem Zielsystem aus (shutdown -r). keyPath zeigt auf den PRIVATEN Key lokal (z.B. aus GenerateSSHKey) - der öffentliche Key (.pub) muss vorher in ~/.ssh/authorized_keys auf dem Zielserver eingetragen sein. delay ist die Wartezeit in Sekunden bis zum Reboot (Default 30), damit die SSH-Session sauber schließt, bevor das System herunterfährt",
+        "description": "Löst per SSH-Key-Authentifizierung einen Reboot auf einem Zielsystem aus (shutdown -r). keyPath zeigt auf den PRIVATEN Key lokal (z.B. aus GenerateSSHKey) - der öffentliche Key (.pub) muss vorher in ~/.ssh/authorized_keys auf dem Zielserver eingetragen sein. delay ist die Wartezeit in Sekunden bis zum Reboot (Default 30), damit die SSH-Session sauber schließt, bevor das System herunterfährt; 0 löst einen sofortigen Reboot aus. Mit knownHostsPath wird der Host-Key wie bei sftp.ConnectWithKey gegen eine known_hosts-Datei geprüft (optional). port ist der SSH-Port (Default 22, nur bei Abweichung angeben).",
         "syntax": "ssh.RebootWithKey(host, user, keyPath, [delay], [knownHostsPath], [port])"
       }
     },
     "steg": {
       "Extract": {
-        "description": "Extrahiert eingebettete Daten aus einem Bild und gibt sie als Base64 zurück.",
+        "description": "Extrahiert versteckte Daten aus einem Bild.",
         "syntax": "steg.Extract(path, seed)"
       },
       "GenerateSeed": {
-        "description": "Erzeugt einen deterministischen Seed aus Passwort und Salt (HMAC-SHA256).",
-        "syntax": "steg.GenerateSeed(pass, salt)"
+        "description": "Erzeugt einen deterministischen HMAC-SHA256-Seed.",
+        "syntax": "steg.GenerateSeed(password, salt)"
       },
       "GetCapacity": {
-        "description": "Prüft ob ein Bild groß genug für einen Payload ist. dataLen = rohe Byte-Länge.",
+        "description": "Ermittelt die verfügbare Steganografie-Kapazität eines Bildes.",
         "syntax": "steg.GetCapacity(path, dataLen, seed)"
       },
       "Inject": {
-        "description": "Bettet Base64-kodierte Daten per LSB-Steganografie in ein Bild ein.",
+        "description": "Versteckt Base64-Daten in einem Bild.",
         "syntax": "steg.Inject(inPath, outPath, dataB64, seed)"
       }
     },
@@ -2574,12 +2609,12 @@
         "syntax": "string.CharAt(str, index)"
       },
       "CharCount": {
-        "description": "Zählt Buchstaben und Ziffern im Text.",
+        "description": "Zählt alle Zeichen im Text außer Leerzeichen (Buchstaben, Ziffern sowie Satz-/Sonderzeichen zählen mit).",
         "syntax": "string.CharCount(s)"
       },
       "Choose": {
         "description": "Wählt ein Element basierend auf einem Index (1-basiert)",
-        "syntax": "string.Choose(n,v()"
+        "syntax": "string.Choose(n,v...)"
       },
       "CleanAllLines": {
         "description": "Entfernt alle Leerzeilen und trimmt verbleibende Zeilen.",
@@ -2613,6 +2648,10 @@
         "description": "Wandelt Text in Hex-Strings um (ABC -\u003e 414243).",
         "syntax": "string.HexEncode(val)"
       },
+      "InsertAfterText": {
+        "description": "Fügt in jeder Zeile nach der ersten Fundstelle des Suchtextes den angegebenen Text ein und gibt den bearbeiteten Text zurück.",
+        "syntax": "string.InsertAfterText(text, suchtext, einfügen)"
+      },
       "Join": {
         "description": "Verbindet Array-Elemente.",
         "syntax": "string.Join(arr, [sep])"
@@ -2620,6 +2659,10 @@
       "Like": {
         "description": "Einfacher Mustervergleich: # (Ziffer), ? (ein Zeichen), * (viele Zeichen).",
         "syntax": "string.Like(text, pattern)"
+      },
+      "Mid": {
+        "description": "Gibt einen Teilstring ab der angegebenen Position zurück.",
+        "syntax": "Mid(text, start [, length])"
       },
       "PadLeft": {
         "description": "Füllt den String links auf eine Mindestlänge auf.",
@@ -2632,6 +2675,10 @@
       "RegExp": {
         "description": "Extrahiert Treffer basierend auf einem Regex-Muster (inkl. Groups).",
         "syntax": "string.RegExp(s, pattern)"
+      },
+      "RemoveLine": {
+        "description": "Entfernt eine oder mehrere Zeilen anhand eines enthaltenen Textes oder einer Zeilennummer.",
+        "syntax": "string.RemoveLine(text, suchtext|zeile [, all])"
       },
       "Repeat": {
         "description": "Wiederholt den Text n-mal.",
@@ -2663,7 +2710,7 @@
       },
       "Switch": {
         "description": "Gibt den Wert der ersten wahren Bedingung zurück",
-        "syntax": "string.Switch(v()"
+        "syntax": "string.Switch(v...)"
       },
       "TrimLines": {
         "description": "Entfernt Leerzeichen am Ende jeder einzelnen Zeile.",
@@ -2671,69 +2718,77 @@
       },
       "TxtToSqlInsert": {
         "description": "Generiert SQL-Inserts aus einem Array (mit Transaktionen).",
-        "syntax": "string.TxtToSqlInsert(data, table, dialect()"
+        "syntax": "string.TxtToSqlInsert(data, table, dialect...)"
       },
       "Val": {
         "description": "Extrahiert den numerischen Teil eines Strings von links beginnend",
         "syntax": "string.Val(n)"
       },
+      "Wipe": {
+        "description": "Überschreibt ein Byte-Array (z.B. von reg.ReadProtectedValueBytes) in-place mit Nullen. Sollte aufgerufen werden, sobald ein entschlüsselter Wert nicht mehr benötigt wird.",
+        "syntax": "string.Wipe(byteArray)"
+      },
+      "WipeString": {
+        "description": "Überschreibt den Speicherinhalt eines Strings mit Nullbytes (0x00). Im Gegensatz zu 'x = \"\"' wird hier der tatsächliche RAM-Inhalt gelöscht, nicht nur die Variable umgebogen. Nach dem Aufruf enthält die Variable eine Zeichenkette gleicher Länge, aber nur aus Nullbytes.",
+        "syntax": "string.WipeString(value)"
+      },
       "WordCount": {
-        "description": "Zählt die Anzahl der Wörter in einem Text.",
+        "description": "Zählt die Anzahl der Wörter in einem Text (mehrfache Leerzeichen werden korrekt behandelt).",
         "syntax": "string.WordCount(s)"
       }
     },
     "tar": {
       "Add": {
-        "description": "Fügt bestehende TAR-Archive weitere Dateien hinzu (Append-Modus).",
-        "syntax": "tar.Add(tarPath, files()"
+        "description": "Fügt Dateien zu einem bestehenden TAR-Archiv hinzu.",
+        "syntax": "tar.Add(tarPath, files...)"
       },
       "Create": {
-        "description": "Erstellt ein TAR-Archiv. Gibt True bei Erfolg zurück, False wenn leer oder Fehler.",
-        "syntax": "tar.Create(tarPath, files()"
+        "description": "Erstellt ein TAR-Archiv.",
+        "syntax": "tar.Create(tarPath, files...)"
       },
       "CreateFlat": {
-        "description": "Erstellt ein TAR-Archiv ohne Ordnerstruktur (alle Dateien im Root). Gibt True bei Erfolg zurück.",
-        "syntax": "tar.CreateFlat(tarPath, files()"
+        "description": "Erstellt ein TAR-Archiv ohne Ordnerstruktur.",
+        "syntax": "tar.CreateFlat(tarPath, files...)"
       },
       "Exists": {
-        "description": "Prüft blitzschnell, ob eine bestimmte Datei im TAR-Archiv existiert, ohne alles zu entpacken.",
+        "description": "Prüft, ob eine Datei im TAR-Archiv existiert.",
         "syntax": "tar.Exists(tarPath, file)"
       },
       "Extract": {
-        "description": "Entpackt ein TAR-Archiv in das Zielverzeichnis 'dest'. Gibt true bei Erfolg zurück.",
+        "description": "Entpackt ein TAR-Archiv in ein Zielverzeichnis.",
         "syntax": "tar.Extract(archive, dest)"
       },
       "GzCreate": {
-        "description": "Erstellt ein komprimiertes GZ-Archiv. Gibt True bei Erfolg zurück.",
-        "syntax": "tar.GzCreate(output, files()"
+        "description": "Erstellt ein komprimiertes TAR.GZ-Archiv.",
+        "syntax": "tar.GzCreate(output, files...)"
       },
       "GzCreateFlat": {
-        "description": "Erstellt ein komprimiertes GZ-Archiv ohne Ordnerstruktur (alle Dateien im Root). Gibt True bei Erfolg zurück.",
-        "syntax": "tar.GzCreateFlat(output, files()"
+        "description": "Erstellt ein TAR.GZ-Archiv ohne Ordnerstruktur.",
+        "syntax": "tar.GzCreateFlat(output, files...)"
       },
       "GzExists": {
-        "description": "Sucht nach einer Datei innerhalb eines .tar.gz Archivs.",
+        "description": "Prüft, ob eine Datei in einem TAR.GZ-Archiv existiert.",
         "syntax": "tar.GzExists(tarPath, file)"
       },
       "GzExtract": {
-        "description": "Entpackt ein .tar.gz Archiv vollständig in das Zielverzeichnis.",
+        "description": "Entpackt ein TAR.GZ-Archiv.",
         "syntax": "tar.GzExtract(archive, dest)"
       },
       "GzIsValid": {
-        "description": "Validiert, ob die Datei ein echtes, unbeschädigtes Gzip-TAR-Archiv ist (Header-Check).",
+        "description": "Prüft, ob eine Datei ein gültiges TAR.GZ-Archiv ist.",
         "syntax": "tar.GzIsValid(path)"
       },
       "GzList": {
-        "description": "Gibt ein Array mit Details (Name, Size, IsDir, ModTime) aller Dateien im .tar.gz Archiv zurück.",
+        "description": "Gibt alle Einträge eines TAR.GZ-Archivs zurück.",
         "syntax": "tar.GzList(path)"
       },
       "List": {
-        "description": "Gibt ein Array mit Details (Name, Size, IsDir, ModTime) aller Einträge im TAR-Archiv zurück.",
+        "description": "Gibt alle Einträge eines TAR-Archivs zurück.",
         "syntax": "tar.List(path)"
       },
       "ToGz": {
-        "description": "Komprimiert ein vorhandenes TAR zu einer .tar.gz Datei. Optional kann das Original gelöscht werden.",
-        "syntax": "tar.ToGz(tarPath [, deleteSource])"
+        "description": "Komprimiert ein TAR-Archiv zu .tar.gz.",
+        "syntax": "tar.ToGz(tarPath, [deleteSource])"
       }
     },
     "template": {
@@ -2746,7 +2801,7 @@
         "syntax": "template.RenderFile(path, data)"
       },
       "RenderToFile": {
-        "description": "Rendert ein Template aus einer Datei direkt in eine Ausgabedatei",
+        "description": "Rendert ein Template aus einer Datei direkt in eine Ausgabedatei.",
         "syntax": "template.RenderToFile(templatePath, outPath, data)"
       }
     },
@@ -2757,7 +2812,7 @@
       },
       "GetActiveTitle": {
         "description": "Gibt den Titel des aktuell im Vordergrund befindlichen Fensters zurück.",
-        "syntax": "win.GetActiveTitle(-)"
+        "syntax": "win.GetActiveTitle()"
       },
       "GetEvent": {
         "description": "Liest Ereignisse eines Typs (Error, Warn, Info) aus dem Windows-EventLog.",
@@ -2808,7 +2863,7 @@
     },
     "yaml": {
       "Get": {
-        "description": "Liest Wert via Pfad.",
+        "description": "Liest einen Wert aus YAML über einen Pfad.",
         "syntax": "yaml.Get(yaml, path, v)"
       },
       "Parse": {
@@ -2816,26 +2871,30 @@
         "syntax": "yaml.Parse(yamlContent)"
       },
       "ParseAll": {
-        "description": "Prüft den gesamten YAML-Stream (alle Dokumente). Gibt True zurück, wenn der gesamte Inhalt valide ist, oder die Fehlermeldung inkl. Zeilenangabe bei Syntaxfehlern.",
+        "description": "Prüft den gesamten YAML-Stream mit allen Dokumenten. Gibt True zurück, wenn der gesamte Inhalt valide ist.",
         "syntax": "yaml.ParseAll(yamlContent)"
       },
       "Set": {
-        "description": "Setzt Wert und gibt YAML zurück.",
+        "description": "Setzt einen Wert in YAML und gibt den aktualisierten YAML-String zurück.",
         "syntax": "yaml.Set(yaml, path, val)"
       },
       "Stringify": {
-        "description": "Konvertiert eine vbmini-Struktur (Map/Array) in einen formatierten YAML-String.",
+        "description": "Konvertiert eine VBX-Struktur aus Map oder Array in einen formatierten YAML-String.",
         "syntax": "yaml.Stringify(value)"
       }
     },
     "zip": {
       "Create": {
         "description": "Erstellt ein ZIP-Archiv mit erhaltener Verzeichnisstruktur.",
-        "syntax": "zip.Create(zipPath, files()"
+        "syntax": "zip.Create(zipPath, files... [, password])"
       },
       "CreateFlat": {
         "description": "Erstellt ein ZIP-Archiv ohne Unterordner (alle Dateien auf oberster Ebene).",
-        "syntax": "zip.CreateFlat(zipPath, files()"
+        "syntax": "zip.CreateFlat(zipPath, files... [, password])"
+      },
+      "Exists": {
+        "description": "Prüft, ob eine bestimmte Datei im ZIP-Archiv existiert.",
+        "syntax": "zip.Exists(zipPath, entryName)"
       },
       "Extract": {
         "description": "Entpackt ein Archiv. Schützt gegen Zip-Slip durch Pfad-Validierung.",

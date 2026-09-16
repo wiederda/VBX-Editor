@@ -150,6 +150,35 @@ extension _VbxEditorAppSyntaxHint on _VbxEditorAppState {
 
       lastText = tab.controller.text;
     });
+
+    // ------------------------------------------------------------
+    // Scroll-Listener: hält den Syntax-Hint beim Scrollen mit der
+    // Zeile synchron (VB.NET-artig), statt an der alten Bildschirm-
+    // position stehen zu bleiben. Ohne diesen Listener passiert beim
+    // reinen Scrollen (ohne Tastatureingabe) gar kein Reposition-Call,
+    // weil nur tab.controller (Text/Selektion) beobachtet wird.
+    // ------------------------------------------------------------
+    tab.scrollController.addListener(() {
+      if (!mounted || tab != _currentTab || !_syntaxHint.isVisible) {
+        return;
+      }
+
+      final info = _currentSyntaxInfo;
+      final openParenIndex = _activeOpenParenIndex;
+
+      if (info == null || openParenIndex == null) {
+        _syntaxHint.hide();
+        return;
+      }
+
+      _updateSyntaxHintOverlay(
+        tab,
+        info,
+        _currentParamIndex,
+        tab.controller.text,
+        openParenIndex,
+      );
+    });
   }
 
   ({int line, int column}) _lineColumnFor(EditorTab tab) {
@@ -229,7 +258,7 @@ extension _VbxEditorAppSyntaxHint on _VbxEditorAppState {
 
       // ----------------------------------------------------------
       // Wenn wir eine neue Zeile erreichen und dort kein
-      // geöffneter Aufruf begonnen wurde, nicht auf einen alten
+      // geöffneten Aufruf begonnen wurde, nicht auf einen alten
       // Funktionsaufruf aus einer vorherigen Zeile zurückfallen.
       //
       // Dadurch passiert nicht mehr:
@@ -327,21 +356,52 @@ extension _VbxEditorAppSyntaxHint on _VbxEditorAppState {
       return;
     }
 
-    const toolbarHeight = 48.0;
-    const tabHeight = 40.0;
+    // ------------------------------------------------------------
+    // Position von der ECHTEN Render-Box des TextFields ableiten,
+    // statt sie aus geschätzten Konstanten (Toolbar-/Tab-Höhe,
+    // Gutter-Breite, ...) zusammenzurechnen. Diese Schätzungen
+    // drifteten in der Praxis ab und ließen den Tooltip die gerade
+    // bearbeitete Zeile verdecken, statt sauber darunter zu sitzen.
+    // ------------------------------------------------------------
 
-    const gutterWidth = 44.0;
+    final fieldRenderObject = _editorFieldKey.currentContext
+        ?.findRenderObject();
+    final overlayRenderObject = Overlay.of(
+      _bodyContext!,
+    ).context.findRenderObject();
 
-    // Padding(
-    //   padding: EdgeInsets.all(4)
-    // )
-    // +
-    // InputDecoration.contentPadding:
-    //   EdgeInsets.all(8)
-    const editorPadding = 12.0;
+    if (fieldRenderObject is! RenderBox || overlayRenderObject is! RenderBox) {
+      return;
+    }
 
-    // Muss zum TextField passen.
-    final lineHeight = _fontSize * 1.4;
+    // Position des TextFields selbst im Koordinatensystem des Overlays.
+    final fieldOrigin = overlayRenderObject.globalToLocal(
+      fieldRenderObject.localToGlobal(Offset.zero),
+    );
+
+    // Innenabstand des Textfeldes -- entspricht exakt
+    // InputDecoration.contentPadding in _buildEditor(). Da wir jetzt
+    // von der Render-Box des TextFields selbst ausgehen (nicht mehr
+    // von der äußeren Padding(all: 4)), ist das der einzige noch
+    // verbleibende feste Wert.
+    const contentPadding = 8.0;
+
+    // Zusätzlicher Abstand zwischen der aktuellen Zeile und dem
+    // Tooltip, damit dieser nicht direkt auf dem gerade getippten
+    // Text bzw. der Zeile darunter klebt.
+    const tooltipVerticalGap = 8.0;
+
+    // Tatsächliche Zeilenhöhe messen statt zu schätzen (gleicher
+    // Style wie im TextField -- dort ist KEIN "height" gesetzt).
+    final linePainter = TextPainter(
+      text: TextSpan(
+        text: '',
+        style: TextStyle(fontFamily: 'Consolas', fontSize: _fontSize),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+
+    final lineHeight = linePainter.preferredLineHeight;
 
     final safeOffset = anchorOffset.clamp(0, text.length);
 
@@ -359,11 +419,7 @@ extension _VbxEditorAppSyntaxHint on _VbxEditorAppState {
     final painter = TextPainter(
       text: TextSpan(
         text: textBeforeAnchorOnLine,
-        style: TextStyle(
-          fontFamily: 'Consolas',
-          fontSize: _fontSize,
-          height: 1.4,
-        ),
+        style: TextStyle(fontFamily: 'Consolas', fontSize: _fontSize),
       ),
       textDirection: TextDirection.ltr,
     )..layout();
@@ -372,18 +428,33 @@ extension _VbxEditorAppSyntaxHint on _VbxEditorAppState {
         ? tab.scrollController.offset
         : 0.0;
 
-    final dx = gutterWidth + editorPadding + painter.width;
+    final dx = fieldOrigin.dx + contentPadding + painter.width;
 
     // Obere Kante der aktuellen Textzeile.
     final lineY =
-        toolbarHeight +
-        tabHeight +
-        editorPadding +
+        fieldOrigin.dy +
+        contentPadding +
         (lineIndex * lineHeight) -
         scrollOffset;
 
-    // Tooltip unterhalb der aktuellen Zeile.
-    final dy = lineY + lineHeight;
+    // ------------------------------------------------------------
+    // Sichtbarkeit prüfen: wurde die verankerte Zeile (z.B. durch
+    // Scrollen) aus dem sichtbaren Editor-Bereich hinausgeschoben,
+    // Tooltip ausblenden statt ihn hinter Toolbar/Output-Panel oder
+    // weit außerhalb des Fensters zu zeichnen.
+    // ------------------------------------------------------------
+    final fieldHeight = fieldRenderObject.size.height;
+    final fieldTop = fieldOrigin.dy;
+    final fieldBottom = fieldOrigin.dy + fieldHeight;
+
+    if (lineY + lineHeight < fieldTop || lineY > fieldBottom) {
+      _syntaxHint.hide();
+      return;
+    }
+
+    // Tooltip unterhalb der aktuellen Zeile, mit zusätzlichem Abstand
+    // statt direkt anschließend.
+    final dy = lineY + lineHeight + tooltipVerticalGap;
 
     final position = Offset(dx, dy);
 

@@ -339,11 +339,51 @@ extension _VbxEditorAppUi on _VbxEditorAppState {
               _buildLineNumbers(tab, lineCount),
               Expanded(
                 child: Padding(
+                  key: _editorFieldKey,
                   padding: const EdgeInsets.all(4),
                   child: Focus(
                     onKeyEvent: (node, event) {
                       if (event is! KeyDownEvent) {
                         return KeyEventResult.ignored;
+                      }
+
+                      // ------------------------------------------------------------
+                      // Markierte Auswahl mit " einschließen
+                      //
+                      // Beispiel:
+                      //   test  ->  "test"
+                      // ------------------------------------------------------------
+                      if (event.character == '"') {
+                        final selection = tab.controller.selection;
+
+                        if (!selection.isCollapsed) {
+                          final text = tab.controller.text;
+
+                          final start = selection.start;
+                          final end = selection.end;
+
+                          if (start >= 0 && end <= text.length && start < end) {
+                            final selectedText = text.substring(start, end);
+
+                            final newText =
+                                text.substring(0, start) +
+                                '"' +
+                                selectedText +
+                                '"' +
+                                text.substring(end);
+
+                            tab.controller.value = TextEditingValue(
+                              text: newText,
+                              selection: TextSelection(
+                                baseOffset: start + 1,
+                                extentOffset: start + 1 + selectedText.length,
+                              ),
+                              composing: TextRange.empty,
+                            );
+
+                            return KeyEventResult.handled;
+                          }
+                        }
                       }
 
                       // ------------------------------------------------------------
@@ -441,6 +481,7 @@ extension _VbxEditorAppUi on _VbxEditorAppState {
                       return KeyEventResult.ignored;
                     },
                     child: TextField(
+                      key: _editorFieldKey,
                       controller: tab.controller,
                       scrollController: tab.scrollController,
                       focusNode: tab.focusNode,
