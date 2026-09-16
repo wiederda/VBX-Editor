@@ -345,6 +345,40 @@ extension _VbxEditorAppSyntaxHint on _VbxEditorAppState {
     return (info: info, paramIndex: paramIndex, openParenIndex: openParenIndex);
   }
 
+  // ------------------------------------------------------------
+  // Sucht rekursiv im Unterbaum von [context] nach dem
+  // EditableTextState des zugrundeliegenden TextFields.
+  //
+  // TextField gibt sein internes EditableText nicht direkt über
+  // einen eigenen Key her -- man muss danach suchen. Der übergebene
+  // [context] sollte der Kontext des TextFields selbst sein (bzw.
+  // eines direkten Vorfahren davon), damit hier nicht versehentlich
+  // ein EditableText aus einem anderen TextField (z.B. der
+  // Such-Leiste) gefunden wird.
+  // ------------------------------------------------------------
+  EditableTextState? _findEditableTextState(BuildContext context) {
+    EditableTextState? result;
+
+    context.visitChildElements((element) {
+      if (result != null) {
+        return;
+      }
+
+      if (element.widget is EditableText) {
+        final state = (element as StatefulElement).state;
+
+        if (state is EditableTextState) {
+          result = state;
+          return;
+        }
+      }
+
+      result ??= _findEditableTextState(element);
+    });
+
+    return result;
+  }
+
   void _updateSyntaxHintOverlay(
     EditorTab tab,
     VbxSyntaxInfo info,
@@ -356,14 +390,6 @@ extension _VbxEditorAppSyntaxHint on _VbxEditorAppState {
       return;
     }
 
-    // ------------------------------------------------------------
-    // Position von der ECHTEN Render-Box des TextFields ableiten,
-    // statt sie aus geschätzten Konstanten (Toolbar-/Tab-Höhe,
-    // Gutter-Breite, ...) zusammenzurechnen. Diese Schätzungen
-    // drifteten in der Praxis ab und ließen den Tooltip die gerade
-    // bearbeitete Zeile verdecken, statt sauber darunter zu sitzen.
-    // ------------------------------------------------------------
-
     final fieldRenderObject = _editorFieldKey.currentContext
         ?.findRenderObject();
     final overlayRenderObject = Overlay.of(
@@ -374,68 +400,44 @@ extension _VbxEditorAppSyntaxHint on _VbxEditorAppState {
       return;
     }
 
-    // Position des TextFields selbst im Koordinatensystem des Overlays.
-    final fieldOrigin = overlayRenderObject.globalToLocal(
-      fieldRenderObject.localToGlobal(Offset.zero),
+    // ------------------------------------------------------------
+    // Statt die Y-Position aus einer geschätzten Zeilenhöhe
+    // (lineIndex * lineHeight) hochzurechnen -- was bei jeder Zeile
+    // einen winzigen Messfehler gegenüber der tatsächlich von
+    // RenderEditable gezeichneten Zeilenhöhe aufsummierte ("Tooltip
+    // wandert bei längeren Skripten immer weiter nach oben ab") --
+    // fragen wir RenderEditable direkt nach der echten Cursor-
+    // Position. Das ist exakt dieselbe Berechnung, die Flutter
+    // intern für den blinkenden Text-Cursor verwendet, kennt also
+    // Zeilenhöhe, Zeilenumbrüche und Scroll-Zustand bereits korrekt.
+    // ------------------------------------------------------------
+
+    final editableState = _findEditableTextState(
+      _editorFieldKey.currentContext!,
     );
 
-    // Innenabstand des Textfeldes -- entspricht exakt
-    // InputDecoration.contentPadding in _buildEditor(). Da wir jetzt
-    // von der Render-Box des TextFields selbst ausgehen (nicht mehr
-    // von der äußeren Padding(all: 4)), ist das der einzige noch
-    // verbleibende feste Wert.
-    const contentPadding = 8.0;
+    if (editableState == null) {
+      return;
+    }
+
+    final renderEditable = editableState.renderEditable;
 
     // Zusätzlicher Abstand zwischen der aktuellen Zeile und dem
     // Tooltip, damit dieser nicht direkt auf dem gerade getippten
     // Text bzw. der Zeile darunter klebt.
     const tooltipVerticalGap = 8.0;
 
-    // Tatsächliche Zeilenhöhe messen statt zu schätzen (gleicher
-    // Style wie im TextField -- dort ist KEIN "height" gesetzt).
-    final linePainter = TextPainter(
-      text: TextSpan(
-        text: '',
-        style: TextStyle(fontFamily: 'Consolas', fontSize: _fontSize),
-      ),
-      textDirection: TextDirection.ltr,
-    )..layout();
-
-    final lineHeight = linePainter.preferredLineHeight;
-
     final safeOffset = anchorOffset.clamp(0, text.length);
 
-    // Anfang der aktuellen Zeile.
-    final lineStart = safeOffset == 0
-        ? 0
-        : text.lastIndexOf('\n', safeOffset - 1) + 1;
+    final caretRect = renderEditable.getLocalRectForCaret(
+      TextPosition(offset: safeOffset),
+    );
 
-    // Nullbasierter Zeilenindex.
-    final lineIndex = '\n'.allMatches(text.substring(0, safeOffset)).length;
+    final caretGlobal = renderEditable.localToGlobal(caretRect.bottomLeft);
+    final caretInOverlay = overlayRenderObject.globalToLocal(caretGlobal);
 
-    // Text von Zeilenanfang bis zur "(".
-    final textBeforeAnchorOnLine = text.substring(lineStart, safeOffset);
-
-    final painter = TextPainter(
-      text: TextSpan(
-        text: textBeforeAnchorOnLine,
-        style: TextStyle(fontFamily: 'Consolas', fontSize: _fontSize),
-      ),
-      textDirection: TextDirection.ltr,
-    )..layout();
-
-    final scrollOffset = tab.scrollController.hasClients
-        ? tab.scrollController.offset
-        : 0.0;
-
-    final dx = fieldOrigin.dx + contentPadding + painter.width;
-
-    // Obere Kante der aktuellen Textzeile.
-    final lineY =
-        fieldOrigin.dy +
-        contentPadding +
-        (lineIndex * lineHeight) -
-        scrollOffset;
+    final dx = caretInOverlay.dx;
+    final dy = caretInOverlay.dy + tooltipVerticalGap;
 
     // ------------------------------------------------------------
     // Sichtbarkeit prüfen: wurde die verankerte Zeile (z.B. durch
@@ -443,18 +445,18 @@ extension _VbxEditorAppSyntaxHint on _VbxEditorAppState {
     // Tooltip ausblenden statt ihn hinter Toolbar/Output-Panel oder
     // weit außerhalb des Fensters zu zeichnen.
     // ------------------------------------------------------------
+
+    final fieldOrigin = overlayRenderObject.globalToLocal(
+      fieldRenderObject.localToGlobal(Offset.zero),
+    );
     final fieldHeight = fieldRenderObject.size.height;
     final fieldTop = fieldOrigin.dy;
     final fieldBottom = fieldOrigin.dy + fieldHeight;
 
-    if (lineY + lineHeight < fieldTop || lineY > fieldBottom) {
+    if (caretInOverlay.dy < fieldTop || caretInOverlay.dy > fieldBottom) {
       _syntaxHint.hide();
       return;
     }
-
-    // Tooltip unterhalb der aktuellen Zeile, mit zusätzlichem Abstand
-    // statt direkt anschließend.
-    final dy = lineY + lineHeight + tooltipVerticalGap;
 
     final position = Offset(dx, dy);
 

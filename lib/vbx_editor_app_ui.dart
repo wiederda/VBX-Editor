@@ -339,7 +339,16 @@ extension _VbxEditorAppUi on _VbxEditorAppState {
               _buildLineNumbers(tab, lineCount),
               Expanded(
                 child: Padding(
-                  key: _editorFieldKey,
+                  // Fix: _editorFieldKey wurde vorher HIER UND am
+                  // TextField darunter gleichzeitig vergeben.
+                  // Ein GlobalKey darf aber nur an genau einem
+                  // gemounteten Widget gleichzeitig hängen ("Multiple
+                  // widgets used the same GlobalKey"). Da
+                  // _updateSyntaxHintOverlay() über findRenderObject()
+                  // gezielt die Render-Box des TextFields selbst
+                  // braucht (um InputDecoration.contentPadding korrekt
+                  // draufzurechnen), bleibt der Key ausschließlich am
+                  // TextField.
                   padding: const EdgeInsets.all(4),
                   child: Focus(
                     onKeyEvent: (node, event) {

@@ -1,1 +1,1 @@
-const String kEditorVersion = '1.0.1.2';
+const String kEditorVersion = '1.0.1.3';
