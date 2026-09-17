@@ -49,15 +49,49 @@ class VbxUsageCheckService {
     r'((?:[A-Za-z_][A-Za-z0-9_]*|[0-9]+[A-Za-z_][A-Za-z0-9_]*))\.([A-Za-z_][A-Za-z0-9_]*)\s*\(',
   );
 
-  /// Schneidet einen Zeilen-Kommentar (') ab, analog zu check().
-  String _stripLineComment(String line) {
-    final commentIndex = line.indexOf("'");
+  /// Bereitet eine Zeile für die Modul-Erkennung vor: entfernt einen
+  /// Zeilen-Kommentar (') UND blendet String-Literal-Inhalte (inkl.
+  /// ""-Escape) aus -- in einem einzigen Durchlauf, damit ein Apostroph
+  /// INNERHALB eines Strings (z.B. "John's Skript") nicht fälschlich
+  /// als Kommentar-Start erkannt wird. Ein Apostroph AUSSERHALB eines
+  /// Strings beendet weiterhin die Zeile wie ein echter Kommentar.
+  ///
+  /// Ersetzt die früheren getrennten Methoden _stripLineComment und
+  /// _blankOutStringLiterals: zwei getrennte Durchläufe konnten das
+  /// John's-Skript-Problem nicht lösen, weil der Kommentar-Schnitt
+  /// zuerst lief und zu dem Zeitpunkt noch nichts von String-Grenzen
+  /// wusste. Zeilenlänge bleibt bis zum Kommentar-Beginn unverändert,
+  /// damit start/end-Offsets in ModuleUsageIssue weiter stimmen.
+  String _sanitizeLine(String line) {
+    final buffer = StringBuffer();
+    var inString = false;
+    var i = 0;
 
-    if (commentIndex >= 0) {
-      return line.substring(0, commentIndex);
+    while (i < line.length) {
+      final ch = line[i];
+
+      if (ch == '"') {
+        if (inString && i + 1 < line.length && line[i + 1] == '"') {
+          buffer.write('  '); // "" (escapetes Anführungszeichen) im String
+          i += 2;
+          continue;
+        }
+        inString = !inString;
+        buffer.write(' '); // das Anführungszeichen selbst ausblenden
+        i++;
+        continue;
+      }
+
+      if (ch == "'" && !inString) {
+        // Kommentar beginnt hier, außerhalb eines Strings -- Rest der Zeile ignorieren.
+        break;
+      }
+
+      buffer.write(inString ? ' ' : ch);
+      i++;
     }
 
-    return line;
+    return buffer.toString();
   }
 
   /// Lädt die bekannten Module aus assets/vbx.json.
@@ -183,7 +217,7 @@ class VbxUsageCheckService {
     var lineStartOffset = 0;
 
     for (var lineIndex = 0; lineIndex < lines.length; lineIndex++) {
-      final line = _stripLineComment(lines[lineIndex]);
+      final line = _sanitizeLine(lines[lineIndex]);
 
       for (final match in _callRegex.allMatches(line)) {
         final module = match.group(1)!;
@@ -274,7 +308,7 @@ class VbxUsageCheckService {
     final used = <String>{};
 
     for (final rawLine in lines) {
-      final line = _stripLineComment(rawLine);
+      final line = _sanitizeLine(rawLine);
 
       for (final match in _callRegex.allMatches(line)) {
         final moduleLower = match.group(1)!.toLowerCase();
