@@ -152,6 +152,17 @@ extension _VbxEditorAppUi on _VbxEditorAppState {
             onPressed: _currentTabHasContent ? _saveCurrentFileAs : null,
             icon: const Icon(Icons.save_as),
           ),
+          IconButton(
+            tooltip: _isAdministrator
+                ? 'Bereits als Administrator gestartet'
+                : 'Als Administrator neu starten',
+            onPressed: _isAdministrator ? null : _restartAsAdministrator,
+            icon: AdminIcon(
+              color: _isAdministrator
+                  ? null
+                  : (_isDarkTheme ? Colors.white : Colors.black87),
+            ),
+          ),
           const VerticalDivider(),
           IconButton(
             tooltip: 'Ausführen (F5)',

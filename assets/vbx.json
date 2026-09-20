@@ -48,7 +48,6 @@
   "keywords": [
     "dim",
     "public",
-    "const",
     "print",
     "if",
     "then",
@@ -1336,8 +1335,8 @@
         "syntax": "folder.FindInFiles(path, ext, search [, pattern, flags])"
       },
       "GetDirectories": {
-        "description": "Gibt ein Array mit den Namen aller direkten Unterverzeichnisse zurück.",
-        "syntax": "folder.GetDirectories([path], [pattern])"
+        "description": "Gibt ein Array mit den Namen aller direkten Unterverzeichnisse zurück. 'ignore' schließt Ordner mit diesem Namen aus (Komma-getrennt oder Array).",
+        "syntax": "folder.GetDirectories(path [, ignore])"
       },
       "GetFiles": {
         "description": "Gibt ein Array mit Dateien im Verzeichnis zurück.",
@@ -2092,6 +2091,76 @@
         "syntax": "math.Val(s)"
       }
     },
+    "media": {
+      "AnalyzeSilence": {
+        "description": "Erkennt Stille-Abschnitte im Material (ohne zu schneiden), begrenzt auf die ersten maxSeconds Sekunden (Standard 60). Zum Kalibrieren der Trimm-Schwellwerte vor dem eigentlichen Schneiden mit ToMP3/TrimSilence.",
+        "syntax": "media.AnalyzeSilence(file, [thresholdDB], [durationSec], [maxSeconds])"
+      },
+      "CheckTags": {
+        "description": "Prüft, ob alle angegebenen Tags gesetzt und nicht leer sind. Gibt bei einem fehlenden Tag den Dateipfad zurück, sonst einen leeren String.",
+        "syntax": "media.CheckTags(file, tags)"
+      },
+      "GetBitrate": {
+        "description": "Ermittelt die Audio-Bitrate (kbit/s) einer Mediendatei.",
+        "syntax": "media.GetBitrate(input)"
+      },
+      "GetCover": {
+        "description": "Extrahiert das eingebettete Cover einer MP3-Datei als JPG-Datei.",
+        "syntax": "media.GetCover(file, output)"
+      },
+      "GetDuration": {
+        "description": "Ermittelt die Dauer einer Mediendatei in Sekunden.",
+        "syntax": "media.GetDuration(input)"
+      },
+      "GetInfo": {
+        "description": "Liefert Bitrate (kbit/s), Dauer (Sekunden) und ob ein Cover eingebettet ist, in einem einzigen FFmpeg-Aufruf (Map mit bitrate/duration/hasCover).",
+        "syntax": "media.GetInfo(file)"
+      },
+      "GetTag": {
+        "description": "Liest einen einzelnen Tag oder alle Tags einer Mediendatei. Die Schreibweise des Tag-Namens ist unabhängig von Groß-/Kleinschreibung.",
+        "syntax": "media.GetTag(input, [tag])"
+      },
+      "GetTags": {
+        "description": "Liest einen einzelnen Tag oder alle Tags mehrerer Mediendateien. Die Schreibweise des Tag-Namens ist unabhängig von Groß-/Kleinschreibung.",
+        "syntax": "media.GetTags(files, [tag])"
+      },
+      "IsCover": {
+        "description": "Prüft, ob eine MP3-Datei ein eingebettetes Cover hat.",
+        "syntax": "media.IsCover(file)"
+      },
+      "IsValid": {
+        "description": "Prüft, ob FFmpeg die Audio- und Videostreams einer Mediendatei vollständig verarbeiten kann. True bedeutet, dass FFmpeg erfolgreich beendet wurde.",
+        "syntax": "media.IsValid(input)"
+      },
+      "Merge": {
+        "description": "Fügt mehrere Audiodateien in der angegebenen Reihenfolge zu einer MP3-Datei zusammen.",
+        "syntax": "media.Merge(files, output, [bitrate])"
+      },
+      "SetCover": {
+        "description": "Setzt das eingebettete Cover einer MP3-Datei. Das Cover muss JPG sein und darf maximal 1000 × 1000 Pixel und 1 MB groß sein.",
+        "syntax": "media.SetCover(file, jpg)"
+      },
+      "SetTag": {
+        "description": "Setzt einen oder mehrere Tags einer Mediendatei. Die Schreibweise des Tag-Namens ist unabhängig von Groß-/Kleinschreibung.",
+        "syntax": "media.SetTag(file, tag, value | file, tags)"
+      },
+      "SetTags": {
+        "description": "Setzt einen oder mehrere Tags für mehrere Mediendateien. Bei einer Tag-Map werden alle Änderungen pro Datei mit einem einzigen FFmpeg-Aufruf durchgeführt.",
+        "syntax": "media.SetTags(files, tag, value | files, tags)"
+      },
+      "Tags": {
+        "description": "Übersetzt einen deutschen oder englischen Tag-Namen in den kanonischen internen Tag-Namen. Einzelne Namen werden als String, mehrere Namen als Array zurückgegeben. Ohne Argument werden alle kanonischen Tag-Namen zurückgegeben.",
+        "syntax": "media.Tags([name|names])"
+      },
+      "ToMP3": {
+        "description": "Konvertiert eine Audio- oder Videodatei nach MP3. Mit trimSilence=True werden Stille am Anfang und Ende entfernt.",
+        "syntax": "media.ToMP3(input, output, [bitrate], [trimSilence])"
+      },
+      "TrimSilence": {
+        "description": "Entfernt Stille am Anfang und Ende einer Audiodatei.",
+        "syntax": "media.TrimSilence(input, output)"
+      }
+    },
     "net": {
       "Available": {
         "description": "Prüft, ob eine URL erreichbar ist (HTTP 200-299).",
@@ -2140,6 +2209,10 @@
       "Post": {
         "description": "POST-Anfrage mit Auto-JSON-Erkennung und optionaler Auth. Bei Netzwerkfehlern, 5xx oder 429 wird bis zu 'retries'-mal mit exponentiellem Backoff wiederholt. Gibt bei Erfolg den Body zurück, sonst ErrorVal.",
         "syntax": "net.Post(url, data, [token], [retries], [baseDelayMs], [maxDelayMs])"
+      },
+      "PostFile": {
+        "description": "Sendet den Binärinhalt einer Datei per POST mit explizitem Content-Type (z.B. für Datei-Uploads wie GitHub-Release-Assets). Retry-Verhalten identisch zu net.Post. timeoutMs (Standard 15000) kann bei großen Dateien/langsamen Verbindungen erhöht werden.",
+        "syntax": "net.PostFile(url, dateipfad, contentType, [token], [retries], [baseDelayMs], [maxDelayMs], [timeoutMs])"
       },
       "PostForm": {
         "description": "Sendet eine JSON-POST-Anfrage (z.B. für Push-Dienste wie Gotify). Optional kann ein Link angehängt werden, der als Markdown-Link und als klickbare Notification-Aktion gesetzt wird.",
@@ -2305,6 +2378,10 @@
         "description": "Führt Befehl aus und liefert [Full, Stdout, Stderr, ExitCode]",
         "syntax": "proc.ExecEx(cmd, timeout, args...)"
       },
+      "ExecExDir": {
+        "description": "Führt Befehl mit eigenem Arbeitsverzeichnis aus und liefert [Full, Stdout, Stderr, ExitCode]",
+        "syntax": "proc.ExecExDir(cmd, timeout, workingDir, args...)"
+      },
       "ExecInteractive": {
         "description": "Führt Befehl aus und reagiert automatisch auf Prompts. responses = Array von [muster, antwort] Paaren. Rückgabe: [Full, Stdout, Stderr, ExitCode]",
         "syntax": "proc.ExecInteractive(cmd, timeout, responses, args...)"
@@ -2388,6 +2465,10 @@
       "PidExists": {
         "description": "Prüft, ob eine PID aktiv ist (true/false).",
         "syntax": "proc.PidExists(pid)"
+      },
+      "SetCurrentDirectory": {
+        "description": "Setzt das aktuelle Arbeitsverzeichnis des VBX-Prozesses.",
+        "syntax": "proc.SetCurrentDirectory(path)"
       },
       "Start": {
         "description": "Startet ein Programm im Hintergrund und gibt die neue PID zurück.",

@@ -1,5 +1,9 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:ffi';
+import 'dart:io';
+
+import 'package:ffi/ffi.dart';
 
 import 'package:cross_file/cross_file.dart';
 import 'package:desktop_drop/desktop_drop.dart';
@@ -28,6 +32,7 @@ import 'widgets/comment_icons.dart';
 import 'widgets/stop_icon.dart';
 import 'widgets/dryrun_icons.dart';
 import 'widgets/syntax_hint_overlay.dart';
+import 'widgets/admin_icon.dart';
 
 part 'vbx_editor_app_session.dart';
 part 'vbx_editor_app_files.dart';
@@ -37,6 +42,7 @@ part 'vbx_editor_app_editing.dart';
 part 'vbx_editor_app_autocomplete.dart';
 part 'vbx_editor_app_syntax_hint.dart';
 part 'vbx_editor_app_ui.dart';
+part 'windows_admin.dart';
 
 class VbxEditorApp extends StatefulWidget {
   final ConfigService configService;
@@ -89,6 +95,7 @@ class _VbxEditorAppState extends State<VbxEditorApp> with WindowListener {
   TextSelection? _runOutputSelection;
 
   bool _docsVisible = false;
+  bool _isAdministrator = false;
   double _fontSize = 14.0;
 
   BuildContext? _bodyContext;
@@ -136,7 +143,10 @@ class _VbxEditorAppState extends State<VbxEditorApp> with WindowListener {
   void initState() {
     super.initState();
 
+    _isAdministrator = WindowsAdmin.isAdministrator();
+
     windowManager.addListener(this);
+
     _initWindow();
 
     _fontSize = widget.configService.fontSize;
@@ -170,6 +180,18 @@ class _VbxEditorAppState extends State<VbxEditorApp> with WindowListener {
             await _openFilePath(path);
           }
         });
+  }
+
+  void _restartAsAdministrator() {
+    final filePath = _currentTab?.filePath;
+
+    final started = WindowsAdmin.restartAsAdministrator(filePath: filePath);
+
+    if (!started) {
+      return;
+    }
+
+    exit(0);
   }
 
   Future<void> _initWindow() async {
@@ -250,8 +272,11 @@ class _VbxEditorAppState extends State<VbxEditorApp> with WindowListener {
     // Session speichern.
     await _saveSession();
 
+    // Close-Sperre aufheben.
+    await windowManager.setPreventClose(false);
+
     // Anwendung endgültig beenden.
-    await windowManager.destroy();
+    await windowManager.close();
   }
 
   @override

@@ -11,22 +11,71 @@ import 'version.dart';
 Future<void> main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  final initialFilePath = args.isNotEmpty ? args.first : null;
+  bool isAdmin = false;
+  String? initialFilePath;
+
+  for (int i = 0; i < args.length; i++) {
+    final arg = args[i];
+
+    if (arg == '--admin') {
+      isAdmin = true;
+      continue;
+    }
+
+    if (arg == '--file' && i + 1 < args.length) {
+      initialFilePath = args[++i];
+      continue;
+    }
+
+    // Explorer / "Öffnen mit":
+    //
+    // vbx_editor.exe "C:\...\datei.vb"
+    //
+    // Ein normales Argument ohne -- wird weiterhin
+    // als Dateipfad behandelt.
+    if (!arg.startsWith('--') && initialFilePath == null) {
+      initialFilePath = arg;
+    }
+  }
 
   final singleInstance = SingleInstanceService();
-  final isPrimary = await singleInstance.becomePrimaryOrForward(
-    initialFilePath,
-  );
 
-  if (!isPrimary) {
-    // Datei wurde an die bereits laufende Instanz weitergereicht --
-    // diese hier hat keine Aufgabe mehr und beendet sich sofort.
-    exit(0);
+  if (isAdmin) {
+    // Die alte normale Instanz läuft während des Admin-Neustarts
+    // zunächst noch.
+    //
+    // Deshalb darf die Admin-Instanz hier NICHT forwarden.
+    // Sie wartet stattdessen, bis die alte Instanz ihren Port
+    // freigegeben hat und übernimmt ihn anschließend selbst.
+    final isPrimary = await singleInstance.waitAndBecomePrimary();
+
+    if (!isPrimary) {
+      // Die alte Instanz wurde nicht beendet bzw. der Port konnte
+      // innerhalb des Zeitlimits nicht übernommen werden.
+      singleInstance.dispose();
+      exit(1);
+    }
+  } else {
+    // Normaler Start bzw. Explorer "Öffnen mit".
+    //
+    // Wenn bereits ein Editor läuft, wird der Dateipfad an diesen
+    // weitergereicht und diese Instanz beendet sich anschließend.
+    final isPrimary = await singleInstance.becomePrimaryOrForward(
+      initialFilePath,
+    );
+
+    if (!isPrimary) {
+      singleInstance.dispose();
+      exit(0);
+    }
   }
 
   await windowManager.ensureInitialized();
-  await windowManager.setTitle('VBX Editor $kEditorVersion');
-
+  await windowManager.setTitle(
+    isAdmin
+        ? 'Administrator: VBX Editor $kEditorVersion'
+        : 'VBX Editor $kEditorVersion',
+  );
   final configService = ConfigService();
   await configService.initialize();
 
