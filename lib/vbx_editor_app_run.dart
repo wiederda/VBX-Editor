@@ -1,6 +1,65 @@
 part of 'vbx_editor_app.dart';
 
 extension _VbxEditorAppRun on _VbxEditorAppState {
+  void _appendOutput(String chunk) {
+    _pendingOutput.write(chunk);
+
+    _flushTimer ??= Timer(const Duration(milliseconds: 50), _flushOutput);
+  }
+
+  void _flushOutput() {
+    _flushTimer?.cancel();
+    _flushTimer = null;
+
+    if (_pendingOutput.isEmpty) {
+      return;
+    }
+
+    final text = _pendingOutput.toString();
+    _pendingOutput.clear();
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _runOutput = _applyCarriageReturns(_runOutput, text);
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_outputScrollController.hasClients) {
+        _outputScrollController.jumpTo(
+          _outputScrollController.position.maxScrollExtent,
+        );
+      }
+    });
+  }
+
+  String _applyCarriageReturns(String current, String chunk) {
+    // Windows-Zeilenenden vereinheitlichen, damit \r\n kein Überschreiben auslöst.
+    final normalized = chunk.replaceAll('\r\n', '\n');
+
+    final buffer = StringBuffer(current);
+
+    for (var i = 0; i < normalized.length; i++) {
+      final ch = normalized[i];
+
+      if (ch == '\r') {
+        // Aktuelle (letzte) Zeile verwerfen.
+        final text = buffer.toString();
+        final lastNewline = text.lastIndexOf('\n');
+        buffer.clear();
+        buffer.write(
+          lastNewline == -1 ? '' : text.substring(0, lastNewline + 1),
+        );
+      } else {
+        buffer.write(ch);
+      }
+    }
+
+    return buffer.toString();
+  }
+
   Future<void> _runCurrentFile() async {
     final tab = _currentTab;
 
@@ -30,32 +89,26 @@ extension _VbxEditorAppRun on _VbxEditorAppState {
       _outputPanel = 0;
     });
 
-    final result = await _runnerService.run(tab.filePath!);
+    _pendingOutput.clear();
+
+    final result = await _runnerService.run(
+      tab.filePath!,
+      onStdout: _appendOutput,
+      onStderr: _appendOutput,
+    );
+
+    _flushOutput();
 
     if (!mounted) {
       return;
     }
 
-    if (result.cancelled) {
-      setState(() {
-        _isRunning = false;
-        _isBuilding = false;
-        _runOutput = 'Vorgang wurde abgebrochen.';
-      });
-
-      tab.focusNode.requestFocus();
-      return;
-    }
-
     setState(() {
       _isRunning = false;
+      _isBuilding = false;
 
-      if (result.stdout.isNotEmpty && result.stderr.isNotEmpty) {
-        _runOutput = '${result.stdout}\n${result.stderr}';
-      } else if (result.stdout.isNotEmpty) {
-        _runOutput = result.stdout;
-      } else {
-        _runOutput = result.stderr;
+      if (result.cancelled) {
+        _runOutput += '\nVorgang wurde abgebrochen.';
       }
     });
 
@@ -100,7 +153,16 @@ extension _VbxEditorAppRun on _VbxEditorAppState {
       _outputPanel = 0;
     });
 
-    final result = await _runnerService.runCommand('Build', tab.filePath!);
+    _pendingOutput.clear();
+
+    final result = await _runnerService.runCommand(
+      'Build',
+      tab.filePath!,
+      onStdout: _appendOutput,
+      onStderr: _appendOutput,
+    );
+
+    _flushOutput();
 
     if (!mounted) {
       return;
@@ -110,17 +172,8 @@ extension _VbxEditorAppRun on _VbxEditorAppState {
       _isBuilding = false;
 
       if (result.cancelled) {
-        _runOutput = 'Vorgang wurde abgebrochen.';
-        return;
-      }
-
-      if (result.stdout.isNotEmpty && result.stderr.isNotEmpty) {
-        _runOutput = '${result.stdout}\n${result.stderr}';
-      } else if (result.stdout.isNotEmpty) {
-        _runOutput = result.stdout;
-      } else if (result.stderr.isNotEmpty) {
-        _runOutput = result.stderr;
-      } else {
+        _runOutput += '\nVorgang wurde abgebrochen.';
+      } else if (_runOutput.isEmpty) {
         _runOutput = 'Build fertig (Exit-Code ${result.exitCode})';
       }
     });
@@ -155,7 +208,16 @@ extension _VbxEditorAppRun on _VbxEditorAppState {
       _outputPanel = 0;
     });
 
-    final result = await _runnerService.runCommand('-dryrun', tab.filePath!);
+    _pendingOutput.clear();
+
+    final result = await _runnerService.runCommand(
+      '-dryrun',
+      tab.filePath!,
+      onStdout: _appendOutput,
+      onStderr: _appendOutput,
+    );
+
+    _flushOutput();
 
     if (!mounted) {
       return;
@@ -165,17 +227,8 @@ extension _VbxEditorAppRun on _VbxEditorAppState {
       _isDryRunning = false;
 
       if (result.cancelled) {
-        _runOutput = 'Vorgang wurde abgebrochen.';
-        return;
-      }
-
-      if (result.stdout.isNotEmpty && result.stderr.isNotEmpty) {
-        _runOutput = '${result.stdout}\n${result.stderr}';
-      } else if (result.stdout.isNotEmpty) {
-        _runOutput = result.stdout;
-      } else if (result.stderr.isNotEmpty) {
-        _runOutput = result.stderr;
-      } else {
+        _runOutput += '\nVorgang wurde abgebrochen.';
+      } else if (_runOutput.isEmpty) {
         _runOutput = 'Dry Run ok - keine Fehler gefunden.';
       }
     });

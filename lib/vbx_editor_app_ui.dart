@@ -685,6 +685,7 @@ extension _VbxEditorAppUi on _VbxEditorAppState {
     final isDark = _isDarkTheme;
 
     return SingleChildScrollView(
+      controller: _outputScrollController,
       padding: const EdgeInsets.all(8),
       child: Align(
         alignment: Alignment.topLeft,

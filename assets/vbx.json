@@ -48,6 +48,7 @@
   "keywords": [
     "dim",
     "public",
+    "const",
     "print",
     "if",
     "then",
@@ -71,7 +72,9 @@
     "exit",
     "case",
     "select",
-    "end"
+    "end",
+    "try",
+    "catch"
   ],
   "logicals": [
     "and",
@@ -105,6 +108,7 @@
     "data",
     "db",
     "debug",
+    "doc",
     "docker",
     "env",
     "export",
@@ -114,12 +118,14 @@
     "hash",
     "ini",
     "json",
+    "makemkv",
     "map",
     "net",
     "pgp",
     "picture",
     "pqc",
     "proc",
+    "qr",
     "rand",
     "reg",
     "service",
@@ -131,6 +137,8 @@
     "tar",
     "template",
     "kuma",
+    "vault",
+    "websocket",
     "win",
     "xml",
     "yaml",
@@ -143,8 +151,12 @@
         "syntax": "7z.Create(archivePath, files... [, password])"
       },
       "Extract": {
-        "description": "Entpackt ein 7z-Archiv nativ (ohne externes 7z benötigt). Schützt gegen Zip-Slip durch Pfad-Validierung.",
+        "description": "Entpackt ein 7z-Archiv. Nutzt zunächst die native Go-Implementierung; fällt bei Fehlern automatisch auf eine 7z-Binary zurück (System-PATH, Standardpfad oder via 7z.SetBinaryPath gesetzt) — deckt Fälle ab, die die reine Go-Bibliothek nicht unterstützt (z.B. bestimmte Solid-Block-/Coder-Kombinationen).",
         "syntax": "7z.Extract(archivePath, dest [, password])"
+      },
+      "IsValid": {
+        "description": "Prüft, ob eine Datei ein gültiges 7z-Archiv ist (Inhalt, nicht nur Dateiendung).",
+        "syntax": "7z.IsValid(archivePath [, password])"
       },
       "List": {
         "description": "Gibt Details über den Inhalt eines 7z-Archivs zurück.",
@@ -883,6 +895,56 @@
         "syntax": "debug.TimerStart()"
       }
     },
+    "doc": {
+      "Convert": {
+        "description": "Konvertiert ein Dokument zwischen DOCX und ODT (Richtung ergibt sich aus den Endungen).",
+        "syntax": "doc.Convert(quelle, ziel)"
+      },
+      "Font": {
+        "description": "Setzt Schriftart und optional Schriftgröße des aktuellen Dokuments.",
+        "syntax": "doc.Font(name [, size])"
+      },
+      "Heading": {
+        "description": "Fügt eine Überschrift der Ebene 1 bis 3 hinzu.",
+        "syntax": "doc.Heading(text, level)"
+      },
+      "List": {
+        "description": "Fügt eine Aufzählung oder nummerierte Liste hinzu.",
+        "syntax": "doc.List(array [, numbered])"
+      },
+      "New": {
+        "description": "Erzeugt ein neues leeres Dokument.",
+        "syntax": "doc.New()"
+      },
+      "PageBreak": {
+        "description": "Fügt einen Seitenumbruch hinzu.",
+        "syntax": "doc.PageBreak()"
+      },
+      "ReadText": {
+        "description": "Liest den Text eines DOCX- oder ODT-Dokuments.",
+        "syntax": "doc.ReadText(pfad [, tabellenMarker] [, markdown])"
+      },
+      "Save": {
+        "description": "Speichert das aktuelle Dokument als DOCX oder ODT.",
+        "syntax": "doc.Save(pfad)"
+      },
+      "Table": {
+        "description": "Fügt eine Tabelle hinzu.",
+        "syntax": "doc.Table(array [, header])"
+      },
+      "Tables": {
+        "description": "Liest alle Tabellen eines DOCX- oder ODT-Dokuments.",
+        "syntax": "doc.Tables(pfad)"
+      },
+      "Text": {
+        "description": "Fügt einen formatierten Absatz hinzu.",
+        "syntax": "doc.Text(text [, bold] [, italic] [, underline])"
+      },
+      "Write": {
+        "description": "Schreibt Text direkt als neues DOCX- oder ODT-Dokument.",
+        "syntax": "doc.Write(pfad, text)"
+      }
+    },
     "docker": {
       "ComposeDown": {
         "description": "Stoppt und entfernt einen Docker-Compose-Stack.",
@@ -1342,6 +1404,10 @@
         "description": "Gibt ein Array mit Dateien im Verzeichnis zurück.",
         "syntax": "folder.GetFiles(path [, pattern, recursive, fullPath])"
       },
+      "GetFilesMax": {
+        "description": "Gibt ein Array mit Dateien aus mehreren Verzeichnissen zurück.",
+        "syntax": "folder.GetFilesMax(folders [, pattern, recursive, fullPath])"
+      },
       "GetSubFolders": {
         "description": "Gibt ein Array mit Unterverzeichnissen zurück.",
         "syntax": "folder.GetSubFolders(path [, pattern, recursive, fullPath])"
@@ -1484,6 +1550,14 @@
         "description": "Gibt das Zeichen zum Unicode-Wert zurück.",
         "syntax": "Chr(code)"
       },
+      "ClipboardClear": {
+        "description": "Leert die Zwischenablage.",
+        "syntax": "ClipboardClear()"
+      },
+      "ClipboardHasText": {
+        "description": "Prüft, ob aktuell Text in der Zwischenablage liegt.",
+        "syntax": "ClipboardHasText()"
+      },
       "Compare": {
         "description": "Vergleicht Versionsnummern im Format Major.Minor.Patch. Rückgabe: -1, 0, 1",
         "syntax": "Compare(v1, v2)"
@@ -1523,6 +1597,10 @@
       "FormatSize": {
         "description": "Wandelt Bytes in GB/MB um.",
         "syntax": "FormatSize(bytes)"
+      },
+      "FromClipboard": {
+        "description": "Liest den aktuellen Textinhalt der Zwischenablage.",
+        "syntax": "FromClipboard()"
       },
       "GC": {
         "description": "Erzwingt den Garbage Collector, um ungenutzten Speicher sofort freizugeben.",
@@ -1567,6 +1645,10 @@
       "IsMap": {
         "description": "Prüft ob der Wert eine Map ist.",
         "syntax": "IsMap(val)"
+      },
+      "IsNothing": {
+        "description": "Prüft ob ein Wert nicht initialisiert ist (Undefined, Null, Nil, None).",
+        "syntax": "IsNothing(b)"
       },
       "IsNull": {
         "description": "Prüft ob der Wert Null oder nicht initialisiert ist.",
@@ -1662,7 +1744,7 @@
       },
       "Split": {
         "description": "Zerlegt einen String an einem Separator in ein Array",
-        "syntax": "Split(s, sep)"
+        "syntax": "Split(s, sep, [removeEmpty], [unique])"
       },
       "Substring": {
         "description": "Gibt einen Teilstring zurück (0-basiert).",
@@ -1911,6 +1993,20 @@
         "syntax": "kuma.StopMaintenance(server, user, password, maintenanceID, [secret])"
       }
     },
+    "makemkv": {
+      "GetDiscInfo": {
+        "description": "Liest die Informationen einer MakeMKV-Disc. Rückgabe: [DiscName, Drive, DrivePath].",
+        "syntax": "makemkv.GetDiscInfo(drive, [executable])"
+      },
+      "GetTitles": {
+        "description": "Liest die Titel einer MakeMKV-Disc und filtert nach Mindestdauer (in Minuten), Audiosprache und Untertitelsprache (je Array, leeres Array = kein Filter; z. B. [\"ger\"]). Optional kann der Pfad zu makemkvcon angegeben werden. Rückgabe je Titel: [Index, DauerSekunden, GrößeBytes, Name, Playlist, Dateiname, AudioSprachen, UntertitelSprachen, Kapitel].",
+        "syntax": "makemkv.GetTitles(drive, minDuration, language, subtitle, [executable])"
+      },
+      "Rip": {
+        "description": "Rippt einen mit GetTitles ermittelten Titel synchron in outputPath und wartet bis MakeMKV fertig ist. Rückgabe: Pfad der erzeugten MKV-Datei.",
+        "syntax": "makemkv.Rip(drive, title, outputPath, [executable])"
+      }
+    },
     "map": {
       "Clear": {
         "description": "Leert die Map (mutierend)",
@@ -2092,10 +2188,6 @@
       }
     },
     "media": {
-      "AnalyzeSilence": {
-        "description": "Erkennt Stille-Abschnitte im Material (ohne zu schneiden), begrenzt auf die ersten maxSeconds Sekunden (Standard 60). Zum Kalibrieren der Trimm-Schwellwerte vor dem eigentlichen Schneiden mit ToMP3/TrimSilence.",
-        "syntax": "media.AnalyzeSilence(file, [thresholdDB], [durationSec], [maxSeconds])"
-      },
       "CheckTags": {
         "description": "Prüft, ob alle angegebenen Tags gesetzt und nicht leer sind. Gibt bei einem fehlenden Tag den Dateipfad zurück, sonst einen leeren String.",
         "syntax": "media.CheckTags(file, tags)"
@@ -2287,12 +2379,8 @@
     },
     "picture": {
       "Convert": {
-        "description": "Konvertiert ein Bild. Formate: jpg, png, webp (auch als Input). Bei ico: w/h/q durch Größen-Liste (16,32) ersetzen.",
+        "description": "Konvertiert ein Bild. Formate: jpg, png, webp, jxl (auch als Input). Bei ico: w/h/q durch Größen-Liste (16,32) ersetzen.",
         "syntax": "picture.Convert(in, out, fmt [, w, h, q])"
-      },
-      "ConvertAll": {
-        "description": "Konvertiert alle Bilder eines Ordners.",
-        "syntax": "picture.ConvertAll(inDir, outDir, fmt [, filter, w, h, q])"
       },
       "Snapshot": {
         "description": "Erstellt einen Screenshot eines Monitors.",
@@ -2485,6 +2573,20 @@
       "UptimeString": {
         "description": "Gibt die Laufzeit als formatierten Text zurück (z.B. '2d 05:10:01').",
         "syntax": "proc.UptimeString(pid)"
+      }
+    },
+    "qr": {
+      "Create": {
+        "description": "Erstellt einen QR-Code aus text und speichert ihn als PNG unter ausgabepfad. size (Pixelbreite/-höhe, Standard 256) ist optional.",
+        "syntax": "qr.Create(text, ausgabepfad, [size])"
+      },
+      "Read": {
+        "description": "Liest den ersten QR-Code aus der PNG-Datei unter pfad und gibt seinen Inhalt als Text zurück. ErrorVal, falls keiner gefunden wird.",
+        "syntax": "qr.Read(pfad)"
+      },
+      "ReadAll": {
+        "description": "Liest alle QR-Codes aus der PNG-Datei unter pfad und gibt ihre Inhalte als Array zurück.",
+        "syntax": "qr.ReadAll(pfad)"
       }
     },
     "rand": {
@@ -2706,6 +2808,10 @@
         "description": "Trimmt jede Zeile einzeln, behält aber Leerzeilen bei.",
         "syntax": "string.CleanLines(s)"
       },
+      "CombinePatterns": {
+        "description": "Kombiniert mehrere Regex-Muster (Array von Strings) per Oder-Verknüpfung (|) zu einem einzigen Muster, jedes Teil in einer nicht-capturing Gruppe geklammert.",
+        "syntax": "string.CombinePatterns(patterns)"
+      },
       "CompareText": {
         "description": "Vergleicht zwei Texte ohne Berücksichtigung der Groß-/Kleinschreibung.",
         "syntax": "string.CompareText(string1, string2)"
@@ -2753,6 +2859,10 @@
       "PadRight": {
         "description": "Füllt den String rechts auf eine Mindestlänge auf.",
         "syntax": "string.PadRight(s, n, [c])"
+      },
+      "PatternFromExample": {
+        "description": "Leitet aus einem Beispielstring ein Regex-Muster ab (Ziffern-/Buchstabenfolgen werden zu \\d/[a-zA-Z]). exact=true nutzt {n}, false nutzt +. position: \"start\", \"end\" oder \"anywhere\". keep (optional): literaler Teilstring, der nicht generalisiert werden soll, z.B. \"IMG\" oder \"Bericht\".",
+        "syntax": "string.PatternFromExample(example, exact, position, keep)"
       },
       "RegExp": {
         "description": "Extrahiert Treffer basierend auf einem Regex-Muster (inkl. Groups).",
@@ -2887,6 +2997,62 @@
         "syntax": "template.RenderToFile(templatePath, outPath, data)"
       }
     },
+    "vault": {
+      "Add": {
+        "description": "Legt einen verschlüsselten Eintrag an oder überschreibt einen bestehenden mit gleichem Namen.",
+        "syntax": "vault.Add(datei, master, name, wert)"
+      },
+      "Delete": {
+        "description": "Entfernt einen Eintrag aus dem Vault.",
+        "syntax": "vault.Delete(datei, master, name)"
+      },
+      "Get": {
+        "description": "Entschlüsselt und liefert den Wert eines Eintrags.",
+        "syntax": "vault.Get(datei, master, name)"
+      },
+      "List": {
+        "description": "Listet die Namen aller gespeicherten Einträge auf (ohne Entschlüsselung).",
+        "syntax": "vault.List(datei)"
+      }
+    },
+    "websocket": {
+      "Close": {
+        "description": "Schließt eine WebSocket-Verbindung und entfernt das Handle.",
+        "syntax": "websocket.Close(handle)"
+      },
+      "Connect": {
+        "description": "Stellt eine WebSocket-Verbindung her. Unterstützt ws:// und wss://.",
+        "syntax": "websocket.Connect(url, [headers], [timeoutMs])"
+      },
+      "IsConnected": {
+        "description": "Prüft, ob die Verbindung noch nicht als geschlossen erkannt wurde.",
+        "syntax": "websocket.IsConnected(handle)"
+      },
+      "OBSConnect": {
+        "description": "Verbindet sich mit OBS WebSocket v5, führt Hello/Identify aus und gibt erst nach erfolgreicher Anmeldung ein Handle zurück.",
+        "syntax": "websocket.OBSConnect(url, password, [timeoutMs])"
+      },
+      "OBSGetRecordStatus": {
+        "description": "Prüft, ob OBS aktuell eine Aufnahme durchführt.",
+        "syntax": "websocket.OBSGetRecordStatus(handle)"
+      },
+      "OBSStartRecord": {
+        "description": "Startet die OBS-Aufnahme mit den aktuell eingestellten OBS-Aufnahmeoptionen.",
+        "syntax": "websocket.OBSStartRecord(handle)"
+      },
+      "OBSStopRecord": {
+        "description": "Stoppt die OBS-Aufnahme und wartet auf die erfolgreiche OBS-Request-Antwort.",
+        "syntax": "websocket.OBSStopRecord(handle)"
+      },
+      "Receive": {
+        "description": "Empfängt eine Textnachricht. Bei Timeout wird ein leerer String zurückgegeben; die Verbindung bleibt bestehen.",
+        "syntax": "websocket.Receive(handle, [timeoutMs])"
+      },
+      "Send": {
+        "description": "Sendet eine Textnachricht über eine bestehende WebSocket-Verbindung.",
+        "syntax": "websocket.Send(handle, message)"
+      }
+    },
     "win": {
       "FindEventID": {
         "description": "Sucht im angegebenen Log nach einer spezifischen Event-ID.",
@@ -2981,6 +3147,10 @@
       "Extract": {
         "description": "Entpackt ein Archiv. Schützt gegen Zip-Slip durch Pfad-Validierung.",
         "syntax": "zip.Extract(zipPath, dest [, password])"
+      },
+      "IsValid": {
+        "description": "Prüft, ob eine Datei ein gültiges ZIP-Archiv ist (Inhalt, nicht nur Dateiendung).",
+        "syntax": "zip.IsValid(zipPath)"
       },
       "List": {
         "description": "Gibt Details über den Inhalt eines ZIP-Archivs zurück.",

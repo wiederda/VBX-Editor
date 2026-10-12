@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'dart:convert';
 
+typedef OutputCallback = void Function(String chunk);
+
 class VbxRunResult {
   final int exitCode;
   final String stdout;
@@ -28,14 +30,27 @@ class VbxRunnerService {
 
   bool get isRunning => _process != null;
 
-  Future<VbxRunResult> run(String filePath) async {
-    return _execute([filePath]);
+  Future<VbxRunResult> run(
+    String filePath, {
+    OutputCallback? onStdout,
+    OutputCallback? onStderr,
+  }) {
+    return _execute([filePath], onStdout: onStdout, onStderr: onStderr);
   }
 
   /// Führt einen Befehl aus:
   /// vbx <command> <filePath>
-  Future<VbxRunResult> runCommand(String command, String filePath) async {
-    return _execute([command, filePath]);
+  Future<VbxRunResult> runCommand(
+    String command,
+    String filePath, {
+    OutputCallback? onStdout,
+    OutputCallback? onStderr,
+  }) {
+    return _execute(
+      [command, filePath],
+      onStdout: onStdout,
+      onStderr: onStderr,
+    );
   }
 
   /// Bricht den aktuell laufenden Prozess ab.
@@ -53,7 +68,11 @@ class VbxRunnerService {
     return true;
   }
 
-  Future<VbxRunResult> _execute(List<String> args) async {
+  Future<VbxRunResult> _execute(
+    List<String> args, {
+    OutputCallback? onStdout,
+    OutputCallback? onStderr,
+  }) async {
     if (_process != null) {
       return VbxRunResult(
         exitCode: -1,
@@ -65,30 +84,32 @@ class VbxRunnerService {
     _cancelRequested = false;
 
     try {
-      final process = await Process.start(
-        executable,
-        args,
-
-        // Wichtig:
-        // Kein Shell-Prozess dazwischen.
-        runInShell: false,
-      );
+      final process = await Process.start(executable, args, runInShell: false);
 
       _process = process;
 
-      final stdoutFuture = process.stdout.transform(utf8.decoder).join();
+      final outBuf = StringBuffer();
+      final errBuf = StringBuffer();
 
-      final stderrFuture = process.stderr.transform(utf8.decoder).join();
+      final stdoutDone = process.stdout.transform(utf8.decoder).forEach((c) {
+        final clean = _stripAnsi(c);
+        outBuf.write(clean);
+        onStdout?.call(clean);
+      });
+
+      final stderrDone = process.stderr.transform(utf8.decoder).forEach((c) {
+        final clean = _stripAnsi(c);
+        errBuf.write(clean);
+        onStderr?.call(clean);
+      });
 
       final exitCode = await process.exitCode;
-
-      final stdout = await stdoutFuture;
-      final stderr = await stderrFuture;
+      await Future.wait([stdoutDone, stderrDone]);
 
       return VbxRunResult(
         exitCode: exitCode,
-        stdout: _stripAnsi(stdout),
-        stderr: _stripAnsi(stderr),
+        stdout: outBuf.toString(),
+        stderr: errBuf.toString(),
         cancelled: _cancelRequested,
       );
     } catch (e) {

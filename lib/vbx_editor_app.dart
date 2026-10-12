@@ -115,6 +115,10 @@ class _VbxEditorAppState extends State<VbxEditorApp> with WindowListener {
 
   String _runOutput = '';
 
+  Timer? _flushTimer;
+  final StringBuffer _pendingOutput = StringBuffer();
+  final ScrollController _outputScrollController = ScrollController();
+
   bool _isRunning = false;
   bool _isBuilding = false;
   bool _panelVisible = false;
@@ -286,6 +290,9 @@ class _VbxEditorAppState extends State<VbxEditorApp> with WindowListener {
     _syntaxHint.hide();
 
     _fileOpenSubscription?.cancel();
+
+    _flushTimer?.cancel();
+    _outputScrollController.dispose();
 
     widget.singleInstanceService.dispose();
 
