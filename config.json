@@ -1,6 +1,4 @@
 {
   "theme": "white",
-  "vbx": {
-    "executable": "C:\\Program Files\\vbx\\vbx.exe"
-  }
+  "vbxcExecutable": "vbxc.exe"
 }

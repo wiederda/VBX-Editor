@@ -1,9 +1,9 @@
 import 'dart:io';
 
-class VbxVersionService {
+class VbxcVersionService {
   final String executable;
 
-  VbxVersionService({
+  VbxcVersionService({
     required this.executable,
   });
 

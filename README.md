@@ -1,6 +1,6 @@
 # VBX Editor
 
-Der **VBX Editor** ist ein Editor für [VBX](../vbx)-Skripte (`.vb`) unter Windows.
+Der **VBX Editor** ist ein Editor für [VBX](../vbx)-Skripte (`.vb`) unter Windows und Linux.
 
 ![VBX Editor](pic/vbx-editor.png)
 
@@ -22,12 +22,12 @@ Der **VBX Editor** ist ein Editor für [VBX](../vbx)-Skripte (`.vb`) unter Windo
 
 ### Ausführen & Build
 
-* **Direktes Ausführen (F5)** – führt die aktuelle Datei über die konfigurierte VBX-Runtime aus
+* **Direktes Ausführen (F5)** – führt die aktuelle Datei über die konfigurierte VBXC-Runtime aus
 * **Dry Run** – simuliert die Ausführung des Skripts, um zu sehen, ob Fehler im Skript vorhanden sind, ohne es normal auszuführen
 * **Ausführung stoppen** – laufende VBX-Ausführung kann jederzeit abgebrochen werden
-* **Build** – erzeugt eine verschlüsselte `.vbc` über `vbx Build`
+* **Build** – startet den Build direkt über das Toolbar-Dropdown für Windows oder Linux (`vbxc build <ziel> <datei.vb>`)
 * **Automatische `#use`-Ergänzung** – fehlende, tatsächlich verwendete optionale Module werden vor dem Ausführen automatisch in die `#use`-Zeile eingetragen (mehrfache/fehlplatzierte `#use`-Zeilen werden bereinigt)
-* **Konsole** – eingebettetes `cmd.exe`, umschaltbar gegen die normale Programm-Ausgabe im unteren Panel
+* **Konsole** – eingebettete System-Shell (`cmd.exe` unter Windows, Bash unter Linux), umschaltbar gegen die normale Programm-Ausgabe im unteren Panel
 
 ### Administrator-Modus
 
@@ -58,5 +58,17 @@ Der **VBX Editor** ist ein Editor für [VBX](../vbx)-Skripte (`.vb`) unter Windo
 
 ### Voraussetzungen
 
-* Windows
-* VBX Runtime
+* Windows oder Linux
+* VBXC Runtime für das jeweilige Betriebssystem
+
+### Linux-Build
+
+Der Linux-Release-Build wird auf einem Linux-System mit eingerichteter Flutter-Linux-Desktop-Umgebung erstellt:
+
+```sh
+flutter build linux --release
+```
+
+Das lauffähige Bundle liegt anschließend unter `build/linux/x64/release/bundle/`. VBXC muss als Linux-Version installiert und über `PATH` erreichbar sein (`vbxc`) oder in den Einstellungen mit seinem vollständigen Pfad eingetragen werden.
+
+Unter Linux speichert der Editor seine Konfiguration und Sitzung in `${XDG_CONFIG_HOME:-$HOME/.config}/vbx-editor` und den Dokumentationscache in `${XDG_CACHE_HOME:-$HOME/.cache}/vbx-editor`.

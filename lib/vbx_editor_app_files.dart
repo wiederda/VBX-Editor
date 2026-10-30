@@ -1,6 +1,15 @@
 part of 'vbx_editor_app.dart';
 
 extension _VbxEditorAppFiles on _VbxEditorAppState {
+  Future<void> _openFolder() async {
+    final path = await _fileService.openDirectory();
+    if (path == null || !mounted) return;
+    setState(() {
+      _workspacePath = Directory(path).absolute.path;
+      _projectExplorerVisible = true;
+    });
+  }
+
   void _createInitialTab() {
     final tab = EditorTab(
       name: _newUntitledName(),

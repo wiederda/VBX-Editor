@@ -17,7 +17,7 @@ Future<void> main(List<String> args) async {
   for (int i = 0; i < args.length; i++) {
     final arg = args[i];
 
-    if (arg == '--admin') {
+    if (Platform.isWindows && arg == '--admin') {
       isAdmin = true;
       continue;
     }

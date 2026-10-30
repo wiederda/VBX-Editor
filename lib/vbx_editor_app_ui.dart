@@ -141,6 +141,22 @@ extension _VbxEditorAppUi on _VbxEditorAppState {
             icon: const Icon(Icons.folder_open),
           ),
           IconButton(
+            tooltip: 'Ordner öffnen',
+            onPressed: _openFolder,
+            icon: const OpenFolderIcon(),
+          ),
+          IconButton(
+            tooltip: _projectExplorerVisible
+                ? 'Projektstruktur ausblenden'
+                : 'Projektstruktur anzeigen',
+            onPressed: _workspacePath == null
+                ? null
+                : () => setState(() {
+                    _projectExplorerVisible = !_projectExplorerVisible;
+                  }),
+            icon: const ProjectTreeIcon(),
+          ),
+          IconButton(
             tooltip: 'Speichern',
             onPressed: _currentTabHasContent && (_currentTab?.modified ?? false)
                 ? _saveCurrentFile
@@ -152,17 +168,18 @@ extension _VbxEditorAppUi on _VbxEditorAppState {
             onPressed: _currentTabHasContent ? _saveCurrentFileAs : null,
             icon: const Icon(Icons.save_as),
           ),
-          IconButton(
-            tooltip: _isAdministrator
-                ? 'Bereits als Administrator gestartet'
-                : 'Als Administrator neu starten',
-            onPressed: _isAdministrator ? null : _restartAsAdministrator,
-            icon: AdminIcon(
-              color: _isAdministrator
-                  ? null
-                  : (_isDarkTheme ? Colors.white : Colors.black87),
+          if (Platform.isWindows)
+            IconButton(
+              tooltip: _isAdministrator
+                  ? 'Bereits als Administrator gestartet'
+                  : 'Als Administrator neu starten',
+              onPressed: _isAdministrator ? null : _restartAsAdministrator,
+              icon: AdminIcon(
+                color: _isAdministrator
+                    ? null
+                    : (_isDarkTheme ? Colors.white : Colors.black87),
+              ),
             ),
-          ),
           const VerticalDivider(),
           IconButton(
             tooltip: 'Ausführen (F5)',
@@ -187,17 +204,27 @@ extension _VbxEditorAppUi on _VbxEditorAppState {
                   : null,
             ),
           ),
-          IconButton(
-            tooltip: 'Build',
-            onPressed:
-                !_currentTabHasContent ||
-                    !_currentTabIsExecutable ||
-                    _isBuilding ||
-                    _isRunning ||
-                    _isDryRunning
-                ? null
-                : _buildCurrentFile,
-            icon: const Icon(Icons.build),
+          Tooltip(
+            message: 'Build für Windows oder Linux starten',
+            child: DropdownButton<String>(
+              hint: const Text('Build'),
+              underline: const SizedBox.shrink(),
+              items: const [
+                DropdownMenuItem(value: 'windows', child: Text('Windows')),
+                DropdownMenuItem(value: 'linux', child: Text('Linux')),
+              ],
+              onChanged:
+                  !_currentTabHasContent ||
+                      !_currentTabIsExecutable ||
+                      _isBuilding ||
+                      _isRunning ||
+                      _isDryRunning
+                  ? null
+                  : (target) {
+                      if (target == null) return;
+                      _buildCurrentFile(target: target);
+                    },
+            ),
           ),
           IconButton(
             tooltip: 'Dry Run (nur prüfen, nicht ausführen)',
@@ -568,16 +595,11 @@ extension _VbxEditorAppUi on _VbxEditorAppState {
       child: Row(
         children: [
           Text(
-            'VBX',
+            'VBXC $_vbxcVersion',
             style: TextStyle(
               fontWeight: FontWeight.bold,
               color: isDark ? Colors.white : Colors.black,
             ),
-          ),
-          const SizedBox(width: 12),
-          Text(
-            _vbxVersion,
-            style: TextStyle(color: isDark ? Colors.white : Colors.black),
           ),
           const Spacer(),
           Text(
@@ -683,6 +705,11 @@ extension _VbxEditorAppUi on _VbxEditorAppState {
 
   Widget _buildRunOutputContent() {
     final isDark = _isDarkTheme;
+    final outputStyle = TextStyle(
+      fontFamily: 'Consolas',
+      fontSize: _fontSize,
+      color: isDark ? Colors.white : Colors.black,
+    );
 
     return SingleChildScrollView(
       controller: _outputScrollController,
@@ -709,13 +736,9 @@ extension _VbxEditorAppUi on _VbxEditorAppState {
               Clipboard.setData(ClipboardData(text: text));
             }
           },
-          child: SelectableText(
-            _runOutput,
-            style: TextStyle(
-              fontFamily: 'Consolas',
-              fontSize: _fontSize,
-              color: isDark ? Colors.white : Colors.black,
-            ),
+          child: SelectableText.rich(
+            TextSpan(children: AnsiSpanBuilder.parse(_runOutput, outputStyle)),
+            style: outputStyle,
             onSelectionChanged: (selection, cause) {
               _runOutputSelection = selection;
             },

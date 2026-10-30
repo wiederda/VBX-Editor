@@ -42,6 +42,10 @@ class FileService {
     return File(path);
   }
 
+  Future<String?> openDirectory() {
+    return FilePicker.platform.getDirectoryPath(dialogTitle: 'Ordner öffnen');
+  }
+
   /// Speichert die Datei unter ihrer eigenen Endung. Wird nur für neue,
   /// noch nie gespeicherte Dateien nach der Endung gefragt -- dann
   /// standardmäßig als .vb (das Hauptformat der App).

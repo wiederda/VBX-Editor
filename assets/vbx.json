@@ -217,7 +217,7 @@
     },
     "app": {
       "CurrentDirectory": {
-        "description": "Gibt das aktuelle Arbeitsverzeichnis (Working Directory) zurück.",
+        "description": "Gibt das aktuelle Arbeitsverzeichnis zurück.",
         "syntax": "app.CurrentDirectory()"
       },
       "ExecutablePath": {
@@ -225,7 +225,7 @@
         "syntax": "app.ExecutablePath()"
       },
       "ScriptDir": {
-        "description": "Gibt das Verzeichnis der aktuell ausgeführten Skript-Datei zurück.",
+        "description": "Gibt das Verzeichnis der Skript-Datei zurück.",
         "syntax": "app.ScriptDir()"
       },
       "ScriptPath": {
@@ -233,7 +233,7 @@
         "syntax": "app.ScriptPath()"
       },
       "SpecialFolder": {
-        "description": "Gibt Standardpfade zurück (desktop, home, temp, etc.).",
+        "description": "Gibt Standardpfade wie home, desktop, temp oder appdata zurück.",
         "syntax": "app.SpecialFolder(name)"
       },
       "StartupPath": {
@@ -241,129 +241,129 @@
         "syntax": "app.StartupPath()"
       },
       "TempPath": {
-        "description": "Gibt den Pfad zum temporären Verzeichnis des Systems zurück.",
+        "description": "Gibt den Pfad zum temporären Verzeichnis zurück.",
         "syntax": "app.TempPath()"
       }
     },
     "array": {
       "Add": {
-        "description": "Fügt ein Element am Ende des Arrays ein (In-Place).",
-        "syntax": "array.Add(arr, val)"
+        "description": "Fügt ein Element am Ende hinzu; Ergebnis zuweisen",
+        "syntax": "array.Add(arr, value)"
       },
       "Append": {
-        "description": "Alias für array.Add",
+        "description": "Alias für Add",
         "syntax": "array.Append(arr, value)"
       },
       "Chunk": {
-        "description": "Unterteilt ein 1D-Array in mehrere Teil-Arrays (2D).",
+        "description": "Teilt Array in Teilarrays",
         "syntax": "array.Chunk(arr, size)"
       },
       "CleanArray": {
-        "description": "Bereinigt Strings in Arrays (Trim + Entfernen von Steuerzeichen \u003c 32, außer Tab)",
+        "description": "Trimmt Textelemente und entfernt Steuerzeichen",
         "syntax": "array.CleanArray(array)"
       },
       "Clear": {
-        "description": "Leert ein Array (In-Place).",
-        "syntax": "array.Clear(array)"
+        "description": "Gibt ein leeres Array zurück",
+        "syntax": "array.Clear(arr)"
       },
       "Clone": {
-        "description": "Erstellt eine Kopie eines Arrays (shallow copy)",
+        "description": "Erstellt eine flache Kopie",
         "syntax": "array.Clone(array)"
       },
       "Contains": {
-        "description": "Prüft, ob ein Wert im Array enthalten ist (Vergleich erfolgt als Text).",
+        "description": "Prüft, ob ein Wert enthalten ist",
         "syntax": "array.Contains(arr, value)"
       },
       "Count": {
-        "description": "Gibt die Anzahl der Elemente oder Dimensionen zurück.",
+        "description": "Gibt die Anzahl der Elemente einer Dimension zurück",
         "syntax": "array.Count(array, [dim])"
       },
       "Create": {
-        "description": "Erstellt 1D- oder 2D-Arrays.",
+        "description": "Erstellt ein 1D- oder 2D-Array",
         "syntax": "array.Create([args...])"
       },
       "Find": {
-        "description": "Filtert ein Array mit Wildcards (*, ?).",
+        "description": "Filtert Strings mit Wildcards * und ?",
         "syntax": "array.Find(arr, pattern, [case])"
       },
       "First": {
-        "description": "Gibt das erste Element eines Arrays zurück",
+        "description": "Gibt das erste Element zurück",
         "syntax": "array.First(array)"
       },
       "IndexOf": {
-        "description": "Gibt die Position des ersten Treffers zurück (0-basiert), oder -1 falls nicht gefunden.",
+        "description": "Gibt die 0-basierte Fundposition oder -1 zurück",
         "syntax": "array.IndexOf(arr, value)"
       },
       "Insert": {
-        "description": "Fügt ein Element an der angegebenen Position ein (In-Place).",
+        "description": "Fügt ein Element an der 0-basierten Position ein",
         "syntax": "array.Insert(arr, index, value)"
       },
       "IsEmpty": {
-        "description": "Prüft, ob ein Array leer ist (true = leer, false = nicht leer)",
+        "description": "Prüft, ob das Array leer ist",
         "syntax": "array.IsEmpty(array)"
       },
       "Join": {
-        "description": "Verbindet Array-Elemente zu String",
+        "description": "Verbindet Array-Elemente zu Text",
         "syntax": "array.Join(arr, sep)"
       },
       "KindOf": {
-        "description": "Gibt den Datentyp des übergebenen Wertes als Text zurück (z.B. 'string', 'number', 'array').",
+        "description": "Gibt den Werttyp zurück",
         "syntax": "array.KindOf(value)"
       },
       "LBound": {
-        "description": "Gibt die Untergrenze der angegebenen Dimension zurück (Standard: 1).",
-        "syntax": "array.LBound(arr, [dim])"
+        "description": "Gibt die Array-Grenze zurück",
+        "syntax": "array.LBound(array, [dim])"
       },
       "Last": {
-        "description": "Gibt das letzte Element eines Arrays zurück",
+        "description": "Gibt das letzte Element zurück",
         "syntax": "array.Last(array)"
       },
       "Length": {
-        "description": "Alias für Count.",
+        "description": "Alias für Count",
         "syntax": "array.Length(array, [dim])"
       },
       "Merge": {
-        "description": "Verbindet zwei Arrays zu einem neuen Array",
+        "description": "Verbindet zwei Arrays",
         "syntax": "array.Merge(array, array)"
       },
       "NaturalSort": {
-        "description": "Sortiert ein Array nach natürlicher Reihenfolge und gibt eine Kopie zurück.",
+        "description": "Sortiert Texte nach natürlicher Reihenfolge",
         "syntax": "array.NaturalSort(array)"
       },
       "Prepend": {
-        "description": "Fügt Element am Anfang ein",
+        "description": "Fügt ein Element am Anfang hinzu",
         "syntax": "array.Prepend(arr, value)"
       },
       "Push": {
-        "description": "Fügt ein Element am Ende des Arrays ein (In-Place).",
-        "syntax": "array.Push(arr, val)"
+        "description": "Alias für Add",
+        "syntax": "array.Push(arr, value)"
       },
       "Remove": {
-        "description": "Sucht den Wert im Array und entfernt das erste Vorkommen (In-Place).",
+        "description": "Entfernt das erste passende Element",
         "syntax": "array.Remove(arr, value)"
       },
       "RemoveAt": {
-        "description": "Entfernt das Element an der angegebenen Position (In-Place).",
+        "description": "Entfernt Element an 0-basierter Position",
         "syntax": "array.RemoveAt(arr, index)"
       },
       "Reverse": {
-        "description": "Gibt ein neues Array mit umgekehrter Reihenfolge zurück",
+        "description": "Gibt ein umgekehrtes Array zurück",
         "syntax": "array.Reverse(array)"
       },
       "Sort": {
-        "description": "Sortiert ein Array (numerisch oder lexikografisch) und gibt eine Kopie zurück",
+        "description": "Sortiert Zahlen oder Texte aufsteigend",
         "syntax": "array.Sort(array)"
       },
       "SortBy": {
-        "description": "Sortiert ein Array von Strings anhand eines per Regex extrahierten Schlüssels (erste Capture Group). Gibt eine Kopie der Original-Elemente in sortierter Reihenfolge zurück. Elemente ohne Treffer werden immer ans Ende sortiert (unabhängig von der Richtung). Standard: aufsteigend (A-Z).",
+        "description": "Sortiert nach Regex-Capture-Gruppe",
         "syntax": "array.SortBy(arr, pattern, [desc])"
       },
       "UBound": {
-        "description": "Gibt die Obergrenze der angegebenen Dimension zurück (Standard: 1).",
-        "syntax": "array.UBound(arr, [dim])"
+        "description": "Gibt die Array-Grenze zurück",
+        "syntax": "array.UBound(array, [dim])"
       },
       "Unique": {
-        "description": "Entfernt doppelte Werte (typsicherer Vergleich)",
+        "description": "Entfernt doppelte Werte",
         "syntax": "array.Unique(array)"
       }
     },
@@ -454,6 +454,10 @@
         "description": "Prüft auf Administrator-Rechte.",
         "syntax": "computer.IsAdmin()"
       },
+      "MACAddresses": {
+        "description": "Listet die Hardware-Adressen (MAC) aktiver Netzwerkschnittstellen auf.",
+        "syntax": "computer.MACAddresses()"
+      },
       "Mount": {
         "description": "Verbindet ein Netzlaufwerk. Gibt [OK, Path, Msg] zurück.",
         "syntax": "computer.Mount(path, [user], [pass], [target])"
@@ -506,9 +510,13 @@
       }
     },
     "crypt": {
-      "\u001b[37m": {
-        "description": "",
-        "syntax": "\u001b[37m(Keine exakten Treffer gefunden)"
+      "Wipe": {
+        "description": "Überschreibt ein Byte-Array in-place mit Nullen.",
+        "syntax": "crypt.Wipe(byteArray)"
+      },
+      "WipeString": {
+        "description": "Überschreibt den Speicherinhalt eines Strings mit Nullbytes.",
+        "syntax": "crypt.WipeString(value)"
       }
     },
     "data": {
@@ -1164,6 +1172,14 @@
         "description": "Gibt die Dateiendung zurück.",
         "syntax": "file.Ext(pfad)"
       },
+      "FindLine": {
+        "description": "Prüft, ob eine Zeile exakt (ohne führende/nachfolgende Leerzeichen) in einer Datei vorkommt. Gibt true beim ersten Treffer zurück, sonst false.",
+        "syntax": "file.FindLine(line, inputFile)"
+      },
+      "FindWord": {
+        "description": "Prüft, ob ein Wort in einer Datei vorkommt. Gibt true beim ersten Treffer zurück, sonst false.",
+        "syntax": "file.FindWord(word, inputFile)"
+      },
       "FindWords": {
         "description": "Sucht beliebige Wörter in einer Datei und schreibt alle Trefferzeilen mit Zeilennummer in eine Ausgabedatei.",
         "syntax": "file.FindWords(words, inputFile, outputFile)"
@@ -1171,6 +1187,10 @@
       "GetDuplicates": {
         "description": "Findet doppelte Zeilen und gibt sie als Array zurück (alphabetisch sortiert).",
         "syntax": "file.GetDuplicates(path, caseSensitive)"
+      },
+      "GitBlobCompare": {
+        "description": "Vergleicht den Git-Blob-SHA1 einer lokalen Datei mit einem erwarteten SHA.",
+        "syntax": "file.GitBlobCompare(path, remoteSha)"
       },
       "GitBlobHash": {
         "description": "Berechnet den Git-Blob-SHA1 einer Datei.",
@@ -1220,6 +1240,10 @@
         "description": "Gibt den Dateinamen ohne Verzeichnispfad zurück.",
         "syntax": "file.Name(pfad)"
       },
+      "ProductVersion": {
+        "description": "Gibt die Produktversion einer exe/dll zurück (Windows).",
+        "syntax": "file.ProductVersion(path)"
+      },
       "ReadAllLines": {
         "description": "Liest eine Textdatei zeilenweise in ein Array.",
         "syntax": "file.ReadAllLines(pfad)"
@@ -1233,7 +1257,7 @@
         "syntax": "file.ReadBytes(path)"
       },
       "ReadValue": {
-        "description": "Sucht eine Zeile mit 'prefix', schneidet diesen ab und gibt den getrimmten Rest (Value) zurück.",
+        "description": "Sucht eine Zeile mit 'prefix', schneidet diesen ab und gibt den getrimmten Rest (valpkg.Value) zurück.",
         "syntax": "file.ReadValue(path, prefix)"
       },
       "Rename": {
@@ -1523,315 +1547,339 @@
     },
     "global": {
       "Alert": {
-        "description": "Pausiert das Skript und zeigt die Nachricht exakt so an, wie übergeben.",
+        "description": "Zeigt Text an und wartet auf Enter",
         "syntax": "Alert(text)"
       },
       "Arch": {
-        "description": "Gibt die Prozessor-Architektur zurück (z.B. amd64).",
+        "description": "Gibt die Prozessorarchitektur zurück",
         "syntax": "Arch()"
       },
       "Asc": {
-        "description": "Gibt den Unicode-Wert des ersten Zeichens zurück.",
-        "syntax": "Asc(char)"
+        "description": "Gibt den Unicode-Wert des ersten Zeichens zurück",
+        "syntax": "Asc(text)"
       },
       "Build": {
-        "description": "Verschlüsselt ein VB-Skript mit Magic Header.",
+        "description": "Kompiliert eine VBX-Quelldatei in Bytecode",
         "syntax": "Build(quelle)"
       },
       "CanRun": {
-        "description": "Prüft, ob ein Skript syntaktisch gültig ist und keine unbekannten Aufrufe enthält, OHNE es auszuführen. Gibt True zurück wenn sauber, sonst einen Error-Wert (prüfbar mit IsError/ErrorText) - entweder mit der Anzahl gefundener Warnungen oder dem Parse-/Sicherheitsfehler.",
+        "description": "Kompiliert ein Skript zur Syntaxprüfung, ohne es auszuführen",
         "syntax": "CanRun(path)"
       },
       "CanRunString": {
-        "description": "Prüft VBX-Quelltext direkt aus einem String (z.B. gerade heruntergeladen, noch nicht gespeichert), OHNE ihn auszuführen oder zu speichern. label wird nur in Fehlermeldungen verwendet. Gibt True zurück wenn sauber, sonst einen Error-Wert (IsError/ErrorText).",
+        "description": "Kompiliert Quelltext zur Syntaxprüfung, ohne ihn auszuführen",
         "syntax": "CanRunString(content, [label])"
       },
       "Chr": {
-        "description": "Gibt das Zeichen zum Unicode-Wert zurück.",
+        "description": "Gibt das Zeichen zum Unicode-Wert zurück",
         "syntax": "Chr(code)"
       },
       "ClipboardClear": {
-        "description": "Leert die Zwischenablage.",
+        "description": "Leert die Zwischenablage",
         "syntax": "ClipboardClear()"
       },
       "ClipboardHasText": {
-        "description": "Prüft, ob aktuell Text in der Zwischenablage liegt.",
+        "description": "Prüft, ob die Zwischenablage Text enthält",
         "syntax": "ClipboardHasText()"
       },
       "Compare": {
-        "description": "Vergleicht Versionsnummern im Format Major.Minor.Patch. Rückgabe: -1, 0, 1",
+        "description": "Vergleicht zwei Major.Minor.Patch-Versionen",
         "syntax": "Compare(v1, v2)"
       },
       "ComputerName": {
-        "description": "Hostname des Rechners.",
+        "description": "Gibt den Hostnamen zurück",
         "syntax": "ComputerName()"
       },
       "Confirm": {
-        "description": "Zeigt Text an und wartet auf J/N Bestätigung.",
+        "description": "Zeigt Text an und liest Ja/Nein",
         "syntax": "Confirm(text)"
       },
       "Contains": {
-        "description": "Prüft, ob ein Teilstring im Text enthalten ist (Gibt True/False zurück).",
-        "syntax": "Contains(s, sub)"
+        "description": "Prüft, ob Text einen Teilstring enthält",
+        "syntax": "Contains(text, suchtext)"
       },
       "ConvNewLine": {
-        "description": "Normalisiert Zeilenumbrüche. Standard: Aktuelles OS (auto). Optional: 'crlf', 'lf', 'cr'.",
+        "description": "Normalisiert Zeilenenden",
         "syntax": "ConvNewLine(content, [target])"
       },
       "DecodeBase64": {
-        "description": "Wandelt einen Base64-String zurück in Klartext.",
+        "description": "Dekodiert Base64-Text",
         "syntax": "DecodeBase64(s)"
       },
       "Default": {
-        "description": "Nutzt Default-Wert, falls val NULL/leer ist.",
+        "description": "Gibt bei Null oder leerem Text den Standardwert zurück",
         "syntax": "Default(val, default)"
       },
       "EncodeBase64": {
-        "description": "Codiert einen Text sicher als Base64-String.",
+        "description": "Codiert Text als Base64",
         "syntax": "EncodeBase64(s)"
       },
       "Format": {
-        "description": "Universal-Formatierung für Zahlen, Datum und Texte.",
+        "description": "Formatiert Zahlen, Datum oder Text",
         "syntax": "Format(expression, style)"
       },
       "FormatSize": {
-        "description": "Wandelt Bytes in GB/MB um.",
+        "description": "Formatiert eine Byte-Anzahl",
         "syntax": "FormatSize(bytes)"
       },
       "FromClipboard": {
-        "description": "Liest den aktuellen Textinhalt der Zwischenablage.",
+        "description": "Liest Text aus der Zwischenablage",
         "syntax": "FromClipboard()"
       },
       "GC": {
-        "description": "Erzwingt den Garbage Collector, um ungenutzten Speicher sofort freizugeben.",
+        "description": "Erzwingt einen Garbage Collection-Lauf",
         "syntax": "GC(-)"
       },
+      "HexDecode": {
+        "description": "Dekodiert Hex-Text",
+        "syntax": "HexDecode(hex)"
+      },
+      "HexEncode": {
+        "description": "Wandelt Text in Hex um",
+        "syntax": "HexEncode(text)"
+      },
       "InStr": {
-        "description": "Gibt die 1-basierte Position eines Teilstrings zurück oder 0, wenn nicht gefunden.",
-        "syntax": "InStr(s, search)"
+        "description": "Gibt die 1-basierte Fundposition oder 0 zurück",
+        "syntax": "InStr(text, suchtext)"
       },
       "IndexOf": {
-        "description": "Gibt den ersten Index eines Teilstrings zurück (-1 wenn nicht gefunden).",
-        "syntax": "IndexOf(s, sub)"
+        "description": "Gibt den 0-basierten Index des ersten Teilstrings oder -1 zurück",
+        "syntax": "IndexOf(text, suchtext)"
       },
       "Input": {
-        "description": "Liest eine Benutzereingabe von der Konsole (Zahlen werden automatisch erkannt).",
+        "description": "Liest eine Zeile und erkennt Zahlen automatisch",
         "syntax": "Input([prompt])"
       },
       "Inspect": {
-        "description": "Zeigt die oberste Struktur eines Wertes (Typ und Schlüssel/Feldnamen), ohne rekursiv in Tiefe zu gehen. Bei Arrays wird das erste Element als Beispiel gezeigt.",
+        "description": "Zeigt Typ und oberste Struktur eines Wertes",
         "syntax": "Inspect(value)"
       },
       "Int": {
-        "description": "Gibt eine Ganzzahl von 0 bis max-1 zurück.",
+        "description": "Gibt eine Zufallszahl von 0 bis max-1 zurück",
         "syntax": "Int([max])"
       },
       "IsArray": {
-        "description": "Prüft ob der Wert ein Array ist (1D oder 2D).",
+        "description": "Prüft auf Array oder Matrix",
         "syntax": "IsArray(val)"
       },
       "IsCompiled": {
-        "description": "Prüft, ob eine Datei ein verschlüsseltes .vbc Skript mit gültigem Header ist.",
+        "description": "Prüft, ob eine gültige VBXC-Bytecode-Datei vorliegt",
         "syntax": "IsCompiled(path)"
       },
       "IsDate": {
-        "description": "Prüft ob ein Wert als Datum parsebar ist.",
+        "description": "Prüft, ob ein Wert ein parsebares Datum ist",
         "syntax": "IsDate(val)"
       },
       "IsInteger": {
-        "description": "Prüft, ob der Wert eine Ganzzahl ist.",
+        "description": "Prüft, ob ein Wert ganzzahlig ist",
         "syntax": "IsInteger(v)"
       },
       "IsMap": {
-        "description": "Prüft ob der Wert eine Map ist.",
+        "description": "Prüft auf Map",
         "syntax": "IsMap(val)"
       },
       "IsNothing": {
-        "description": "Prüft ob ein Wert nicht initialisiert ist (Undefined, Null, Nil, None).",
-        "syntax": "IsNothing(b)"
+        "description": "Prüft auf nicht initialisierten Wert",
+        "syntax": "IsNothing(val)"
       },
       "IsNull": {
-        "description": "Prüft ob der Wert Null oder nicht initialisiert ist.",
+        "description": "Prüft auf Null oder nicht initialisierten Wert",
         "syntax": "IsNull(val)"
       },
       "IsNumeric": {
-        "description": "Prüft, ob der Wert eine Zahl ist oder in eine solche umgewandelt werden kann.",
+        "description": "Prüft, ob ein Wert numerisch ist",
         "syntax": "IsNumeric(v)"
       },
       "IsPositive": {
-        "description": "Prüft, ob n \u003e 0.",
+        "description": "Prüft, ob eine Zahl positiv ist",
         "syntax": "IsPositive(n)"
       },
       "IsPrime": {
-        "description": "Prüft, ob n eine Primzahl ist (nur durch 1 und sich selbst teilbar).",
+        "description": "Prüft, ob eine ganze Zahl prim ist",
         "syntax": "IsPrime(n)"
       },
       "IsString": {
-        "description": "Prüft ob der Wert ein String ist.",
+        "description": "Prüft auf String",
         "syntax": "IsString(val)"
       },
+      "Join": {
+        "description": "Verbindet Array-Elemente",
+        "syntax": "Join(array, [trenner])"
+      },
+      "LCase": {
+        "description": "Kleinbuchstaben",
+        "syntax": "LCase(text)"
+      },
       "LastIndexOf": {
-        "description": "Gibt den letzten Index eines Teilstrings zurück (-1 wenn nicht gefunden).",
+        "description": "Gibt die letzte Fundposition zurück",
         "syntax": "LastIndexOf(s, sub)"
       },
       "Left": {
-        "description": "Extrahiert n Zeichen von links",
-        "syntax": "Left(s, n)"
+        "description": "Linke Zeichen",
+        "syntax": "Left(text, anzahl)"
+      },
+      "Len": {
+        "description": "Zeichenanzahl eines Strings oder Elementanzahl eines Arrays",
+        "syntax": "Len(wert)"
       },
       "Length": {
-        "description": "Gibt die Anzahl der Zeichen zurück.",
-        "syntax": "Length(s)"
+        "description": "Alias für Len",
+        "syntax": "Length(wert)"
       },
       "LoadModule": {
-        "description": "Lädt ein optionales Modul (nativ oder als WASM-Plugin) zur Laufzeit. Gibt True zurück bei Erfolg (auch wenn bereits geladen), sonst einen Error-Wert (prüfbar mit IsError/ErrorText).",
+        "description": "Prüft, ob ein Modul in dieser Runtime verfügbar ist",
         "syntax": "LoadModule(name)"
       },
       "MD5": {
-        "description": "Erzeugt einen MD5-Hash des übergebenen Textes.",
+        "description": "Erzeugt einen MD5-Hash",
         "syntax": "MD5(s)"
       },
       "Mid": {
-        "description": "Gibt einen Teilstring ab der angegebenen Position zurück.",
-        "syntax": "Mid(text, start [, length])"
+        "description": "Teilstring (Start ab 1)",
+        "syntax": "Mid(text, start, [anzahl])"
       },
       "OS": {
-        "description": "Gibt die Prozessor-Architektur zurück (z.B. amd64).",
+        "description": "Gibt das Betriebssystem zurück",
         "syntax": "OS()"
       },
       "Password": {
-        "description": "Liest eine Eingabe von der Konsole ohne sie anzuzeigen (für Passwörter).",
+        "description": "Liest ein Passwort ohne es anzuzeigen",
         "syntax": "Password([prompt])"
       },
       "PrintFormat": {
-        "description": "Gibt eine Übersicht der Format-Optionen auf der Konsole aus.",
+        "description": "Gibt eine Übersicht der Formatoptionen aus",
         "syntax": "PrintFormat()"
       },
       "PunyDecode": {
-        "description": "Dekodiert eine Punycode-Domain zurück in Unicode (IDNA2008/UTS#46).",
+        "description": "Dekodiert eine IDNA-Domain",
         "syntax": "PunyDecode(domain)"
       },
       "PunyEncode": {
-        "description": "Kodiert eine Domain in Punycode (IDNA2008/UTS#46).",
+        "description": "IDNA-kodiert eine Domain",
         "syntax": "PunyEncode(domain)"
       },
       "Replace": {
-        "description": "Ersetzt alle Vorkommen eines Teilstrings im Text.",
-        "syntax": "Replace(s, find, repl)"
+        "description": "Ersetzt alle Vorkommen eines Teilstrings",
+        "syntax": "Replace(text, alt, neu)"
       },
       "ReplaceMany": {
-        "description": "Ersetzt mehrere Teilstrings in einem Text.",
+        "description": "Ersetzt mehrere Teilstrings",
         "syntax": "ReplaceMany(text, find1, repl1, ...)"
       },
       "Right": {
-        "description": "Extrahiert n Zeichen von rechts.",
-        "syntax": "Right(s, n)"
+        "description": "Rechte Zeichen",
+        "syntax": "Right(text, anzahl)"
       },
       "SHA1": {
-        "description": "Erzeugt einen SHA1-Hash (für Legacy-Kompatibilität).",
+        "description": "Erzeugt einen SHA1-Hash",
         "syntax": "SHA1(s)"
       },
       "SHA256": {
-        "description": "Erzeugt einen sicheren SHA256-Hash des Textes.",
+        "description": "Erzeugt einen SHA256-Hash",
         "syntax": "SHA256(s)"
       },
       "SHA512": {
-        "description": "Erzeugt einen hochsicheren SHA512-Hash.",
+        "description": "Erzeugt einen SHA512-Hash",
         "syntax": "SHA512(s)"
       },
       "Sleep": {
-        "description": "Pausiert die Ausführung. ENTER überspringt. showOutput (bool) steuert die Anzeige.",
+        "description": "Wartet die angegebene Dauer",
         "syntax": "Sleep(wert, [einheit], [showOutput])"
       },
       "Split": {
-        "description": "Zerlegt einen String an einem Separator in ein Array",
-        "syntax": "Split(s, sep, [removeEmpty], [unique])"
+        "description": "Teilt Text in ein Array",
+        "syntax": "Split(text, trenner, [removeEmpty], [unique])"
       },
       "Substring": {
-        "description": "Gibt einen Teilstring zurück (0-basiert).",
+        "description": "Gibt einen Teilstring mit 0-basierter Position zurück",
         "syntax": "Substring(s, start, [len])"
       },
       "SystemMemory": {
-        "description": "Gibt [Total, Available, UsedPercent] des Systems zurück.",
+        "description": "Gibt System-RAM Gesamt, verfügbar und Nutzungsprozent zurück",
         "syntax": "SystemMemory(-)"
       },
       "ToBool": {
-        "description": "Wandelt einen Wert in einen Wahrheitswert (True/False) um..",
-        "syntax": "ToBool(value)"
+        "description": "Wandelt einen Wert in Boolean um",
+        "syntax": "ToBool(wert)"
       },
       "ToClipboard": {
-        "description": "Kopiert Text in die Zwischenablage.",
+        "description": "Kopiert Text in die Zwischenablage",
         "syntax": "ToClipboard(text)"
       },
       "ToFloat": {
-        "description": "Wandelt einen Wert in eine Fließkommazahl um.",
-        "syntax": "ToFloat(value)"
+        "description": "Wandelt einen Wert in eine Zahl um",
+        "syntax": "ToFloat(wert)"
       },
       "ToInt": {
-        "description": "Wandelt einen Wert in eine Ganzzahl um (schneidet Nachkommastellen ab).",
-        "syntax": "ToInt(value)"
+        "description": "Wandelt einen Wert in eine Ganzzahl um",
+        "syntax": "ToInt(wert)"
       },
       "ToLower": {
-        "description": "Wandelt den String in Kleinschreibung um.",
-        "syntax": "ToLower(s)"
+        "description": "Wandelt Text in Kleinbuchstaben um",
+        "syntax": "ToLower(text)"
       },
       "ToString": {
-        "description": "Wandelt einen Wert in einen String um.",
-        "syntax": "ToString(value)"
+        "description": "Wandelt einen Wert in Text um",
+        "syntax": "ToString(wert)"
       },
       "ToUpper": {
-        "description": "Wandelt den String in Großschreibung um.",
-        "syntax": "ToUpper(s)"
+        "description": "Wandelt Text in Großbuchstaben um",
+        "syntax": "ToUpper(text)"
       },
       "Trim": {
-        "description": "Entfernt Leerzeichen oder Zeichen.",
+        "description": "Entfernt Leerraum oder Zeichen an beiden Enden",
         "syntax": "Trim(s, [cutset])"
       },
       "TrimEnd": {
-        "description": "Trimmt nur das Ende.",
-        "syntax": "TrimEnd(s, cutset)"
+        "description": "Entfernt Leerraum am Ende",
+        "syntax": "TrimEnd(text)"
       },
       "TrimStart": {
-        "description": "Trimmt nur den Start.",
-        "syntax": "TrimStart(s, cutset)"
+        "description": "Entfernt Leerraum am Anfang",
+        "syntax": "TrimStart(text)"
+      },
+      "UCase": {
+        "description": "Großbuchstaben",
+        "syntax": "UCase(text)"
       },
       "URLDecode": {
-        "description": "Decodiert einen URL-konformen String zurück in Text.",
+        "description": "Dekodiert URL-kodierten Text",
         "syntax": "URLDecode(urlStr)"
       },
       "URLEncode": {
-        "description": "Codiert einen String für die sichere Verwendung in URLs.",
+        "description": "Codiert Text für eine URL",
         "syntax": "URLEncode(val)"
       },
       "Unblock": {
-        "description": "Hebt die NTFS-Sicherheitsblockierung (Zone.Identifier) von Dateien auf.",
-        "syntax": "Unblock(number)"
+        "description": "Entfernt Windows-Zone.Identifier-Markierungen",
+        "syntax": "Unblock(path)"
       },
       "Uptime": {
-        "description": "Gibt die System-Laufzeit in Sekunden zurück.",
+        "description": "Gibt die System-Laufzeit in Sekunden zurück",
         "syntax": "Uptime()"
       },
       "UptimeString": {
-        "description": "Gibt die System-Uptime als lesbaren Text zurück.",
+        "description": "Gibt System-Laufzeit lesbar zurück",
         "syntax": "UptimeString()"
       },
       "UserDomain": {
-        "description": "Gibt die Domäne zurück (Windows) oder den Hostnamen (Linux/macOS).",
+        "description": "Gibt die Benutzer-Domäne oder den Hostnamen zurück",
         "syntax": "UserDomain()"
       },
       "UserName": {
-        "description": "Aktueller Benutzername.",
+        "description": "Gibt den aktuellen Benutzernamen zurück",
         "syntax": "UserName()"
       },
       "Wait": {
-        "description": "Pausiert das Skript, bis der Prozess mit der angegebenen PID beendet ist. Pollt in 250-ms-Intervallen.",
+        "description": "Wartet bis ein Prozess beendet ist",
         "syntax": "Wait(pid)"
       },
       "Worker": {
-        "description": "Startet ein VB-Skript im Hintergrund.",
+        "description": "Startet ein VBX-Skript im Hintergrund",
         "syntax": "Worker(path)"
       },
       "WorkerPool": {
-        "description": "Startet mehrere Skripte mit Obergrenze an Gleichzeitigkeit und wartet auf alle. Gibt Array mit true/false (Erfolg) pro Skript zurück, in Eingabe-Reihenfolge.",
+        "description": "Startet mehrere Skripte parallel und wartet auf alle",
         "syntax": "WorkerPool(paths[], maxParallel)"
       }
     },
@@ -1942,6 +1990,10 @@
         "description": "Rekursive Suche in JSON nach Objekten mit Bedingungen und Rückgabewert.",
         "syntax": "json.SearchDeepWhereGet(jsonStr, returnKey, cond1, cond2, ...)"
       },
+      "SearchDeepWhereGetContains": {
+        "description": "Rekursive JSON-Suche. Bedingungen mit = oder : werden exakt verglichen, Bedingungen mit ~ suchen nach einem Teilstring. Vergleiche sind case-insensitive.",
+        "syntax": "json.SearchDeepWhereGetContains(jsonStr, returnKey, cond1, cond2, ...)"
+      },
       "SearchWhereExists": {
         "description": "Gibt true zurück, wenn mindestens ein Objekt alle Bedingungen erfüllt.",
         "syntax": "json.SearchWhereExists(jsonStr, cond1, cond2, ...)"
@@ -1969,6 +2021,24 @@
       "ToJSON": {
         "description": "Konvertiert eine Variable (Map/Array) in einen validen JSON-String.",
         "syntax": "json.ToJSON(daten)"
+      }
+    },
+    "keystore": {
+      "Delete": {
+        "description": "Löscht einen Alias aus einem Java-Keystore. Rückgabe: Array {Boolean, Meldung}. True = erfolgreich gelöscht, False = Alias nicht gefunden. Technische Fehler werden als Runtime Error gemeldet.",
+        "syntax": "keystore.Delete(path, password, alias, [type], [keytool])"
+      },
+      "Find": {
+        "description": "Prüft, ob ein Alias in einem Java-Keystore existiert. Gibt True zurück, wenn der Alias vorhanden ist, andernfalls False. Technische Fehler werden als Runtime Error gemeldet.",
+        "syntax": "keystore.Find(path, password, alias, [type], [keytool])"
+      },
+      "Info": {
+        "description": "Gibt alle Einträge eines Java-Keystores als 2D-Array zurück: [Alias, Typ, Owner, GültigBis (UTC, yyyy-MM-dd HH:mm:ss, leer falls ohne Datum), Abgelaufen (Bool)].",
+        "syntax": "keystore.Info(path, password, [type])"
+      },
+      "List": {
+        "description": "Gibt die Aliase eines Java-Keystores als Array zurück. Mit onlyExpired=True nur abgelaufene Einträge; das Ergebnis kann direkt an keystore.Delete übergeben werden. type optional (JKS, PKCS12, JCEKS), sonst automatisch erkannt.",
+        "syntax": "keystore.List(path, password, [onlyExpired], [type])"
       }
     },
     "kuma": {
@@ -2055,135 +2125,139 @@
     },
     "math": {
       "Abs": {
-        "description": "Gibt den absoluten Wert (Betrag) einer Zahl zurück.",
+        "description": "Gibt den absoluten Wert zurück",
         "syntax": "math.Abs(n)"
       },
       "Acos": {
-        "description": "Berechnet den Arkuscosinus.",
+        "description": "Berechnet den Arkuskosinus",
         "syntax": "math.Acos(n)"
       },
       "Asin": {
-        "description": "Berechnet den Arkussinus.",
+        "description": "Berechnet den Arkussinus",
         "syntax": "math.Asin(n)"
       },
       "Atan": {
-        "description": "Berechnet den Arkustangens.",
+        "description": "Berechnet den Arkustangens",
         "syntax": "math.Atan(n)"
       },
       "Atan2": {
-        "description": "Berechnet den Arkustangens aus zwei Koordinaten.",
+        "description": "Berechnet den Arkustangens aus zwei Koordinaten",
         "syntax": "math.Atan2(y, x)"
       },
       "Cbrt": {
-        "description": "Berechnet die Kubikwurzel (3. Wurzel).",
+        "description": "Berechnet die Kubikwurzel",
         "syntax": "math.Cbrt(n)"
       },
       "Ceil": {
-        "description": "Rundet auf die nächste ganze Zahl auf.",
+        "description": "Rundet auf die nächste ganze Zahl auf",
         "syntax": "math.Ceil(n)"
       },
       "Clamp": {
-        "description": "Hält den Wert v innerhalb der Grenzen min und max.",
+        "description": "Hält einen Wert innerhalb der Grenzen",
         "syntax": "math.Clamp(v, min, max)"
       },
       "Cos": {
-        "description": "Berechnet den Cosinus (Radiant).",
+        "description": "Berechnet den Cosinus im Bogenmaß",
         "syntax": "math.Cos(n)"
       },
       "DegToRad": {
-        "description": "Rechnet Grad in Bogenmaß (Radiant) um.",
+        "description": "Rechnet Grad in Bogenmaß um",
         "syntax": "math.DegToRad(deg)"
       },
       "E": {
-        "description": "Gibt die Eulersche Zahl zurück (ca. 2,71828).",
+        "description": "Gibt die Eulersche Zahl zurück",
         "syntax": "math.E()"
       },
       "Exp": {
-        "description": "Berechnet die Exponentialfunktion (e^n).",
+        "description": "Berechnet e hoch n",
         "syntax": "math.Exp(n)"
       },
       "Floor": {
-        "description": "Rundet auf die nächste ganze Zahl ab.",
+        "description": "Rundet auf die nächste ganze Zahl ab",
         "syntax": "math.Floor(n)"
       },
       "Int": {
-        "description": "Schneidet alle Nachkommastellen ab.",
+        "description": "Schneidet die Nachkommastellen ab",
         "syntax": "math.Int(n)"
       },
       "Log": {
-        "description": "Berechnet den natürlichen Logarithmus.",
+        "description": "Berechnet den natürlichen Logarithmus",
         "syntax": "math.Log(n)"
       },
+      "Log10": {
+        "description": "Berechnet den Logarithmus zur Basis 10",
+        "syntax": "math.Log10(n)"
+      },
       "LogBase": {
-        "description": "Berechnet den Logarithmus von n zur beliebigen Basis.",
+        "description": "Berechnet den Logarithmus zu einer beliebigen Basis",
         "syntax": "math.LogBase(n, base)"
       },
       "Max": {
-        "description": "Gibt die größere der beiden Zahlen zurück.",
+        "description": "Gibt die größere Zahl zurück",
         "syntax": "math.Max(a, b)"
       },
       "Min": {
-        "description": "Gibt die kleinere der beiden Zahlen zurück.",
+        "description": "Gibt die kleinere Zahl zurück",
         "syntax": "math.Min(a, b)"
       },
       "Mod": {
-        "description": "Berechnet den Rest der Ganzzahl-Division (Modulo).",
+        "description": "Berechnet den Rest der Ganzzahldivision",
         "syntax": "math.Mod(a, b)"
       },
       "Percent": {
-        "description": "Berechnet p Prozent von v.",
+        "description": "Berechnet p Prozent von v",
         "syntax": "math.Percent(p, v)"
       },
       "PercentOf": {
-        "description": "Berechnet, wie viel Prozent part von total sind.",
+        "description": "Berechnet den Prozentanteil",
         "syntax": "math.PercentOf(part, total)"
       },
       "Pi": {
-        "description": "Gibt die Konstante π zurück (ca. 3,14159).",
+        "description": "Gibt die Konstante π zurück",
         "syntax": "math.Pi()"
       },
       "Pow": {
-        "description": "Berechnet die Potenz (Basis^Exponent).",
+        "description": "Berechnet die Potenz",
         "syntax": "math.Pow(basis, exp)"
       },
       "RadToDeg": {
-        "description": "Rechnet Bogenmaß (Radiant) in Grad um.",
+        "description": "Rechnet Bogenmaß in Grad um",
         "syntax": "math.RadToDeg(rad)"
       },
       "Root": {
-        "description": "Berechnet die n-te Wurzel von v.",
+        "description": "Berechnet die n-te Wurzel von v",
         "syntax": "math.Root(v, n)"
       },
       "Round": {
-        "description": "Rundet auf d Nachkommastellen (kaufmännisch).",
+        "description": "Rundet auf die angegebene Anzahl Nachkommastellen",
         "syntax": "math.Round(v, [d])"
       },
       "RoundBank": {
-        "description": "Rundet auf die nächste gerade Zahl (Banker's Rounding).",
+        "description": "Rundet auf die angegebene Anzahl Nachkommastellen",
         "syntax": "math.RoundBank(v, [d])"
       },
       "Sign": {
-        "description": "Gibt das Vorzeichen zurück (-1, 0 oder 1).",
+        "description": "Gibt -1, 0 oder 1 zurück",
         "syntax": "math.Sign(n)"
       },
       "Sin": {
-        "description": "Berechnet den Sinus (Radiant).",
+        "description": "Berechnet den Sinus im Bogenmaß",
         "syntax": "math.Sin(n)"
       },
       "Sqrt": {
-        "description": "Berechnet die Quadratwurzel.",
+        "description": "Berechnet die Quadratwurzel",
         "syntax": "math.Sqrt(n)"
       },
       "Tan": {
-        "description": "Berechnet den Tangens (Radiant).",
+        "description": "Berechnet den Tangens im Bogenmaß",
         "syntax": "math.Tan(n)"
       },
       "Trunc": {
-        "description": "Schneidet die Nachkommastellen ab.",
+        "description": "Schneidet die Nachkommastellen ab",
         "syntax": "math.Trunc(n)"
       },
       "Val": {
-        "description": "Wandelt Text in Zahl um (gibt 0 zurück, falls kein Text).",
+        "description": "Wandelt Text in eine Zahl um; bei Fehler 0",
         "syntax": "math.Val(s)"
       }
     },
@@ -2197,7 +2271,7 @@
         "syntax": "media.GetBitrate(input)"
       },
       "GetCover": {
-        "description": "Extrahiert das eingebettete Cover einer MP3-Datei als JPG-Datei.",
+        "description": "Extrahiert das eingebettete Cover einer MP3-, M4A- oder M4B-Datei als JPG-Datei.",
         "syntax": "media.GetCover(file, output)"
       },
       "GetDuration": {
@@ -2217,7 +2291,7 @@
         "syntax": "media.GetTags(files, [tag])"
       },
       "IsCover": {
-        "description": "Prüft, ob eine MP3-Datei ein eingebettetes Cover hat.",
+        "description": "Prüft, ob eine MP3-, M4A- oder M4B-Datei ein eingebettetes Cover hat.",
         "syntax": "media.IsCover(file)"
       },
       "IsValid": {
@@ -2245,7 +2319,7 @@
         "syntax": "media.Tags([name|names])"
       },
       "ToMP3": {
-        "description": "Konvertiert eine Audio- oder Videodatei nach MP3. Mit trimSilence=True werden Stille am Anfang und Ende entfernt.",
+        "description": "Konvertiert eine Audio- oder Videodatei nach MP3 (z. B. M4A). Ein eingebettetes Cover wird übernommen. Mit trimSilence=True werden Stille am Anfang und Ende entfernt.",
         "syntax": "media.ToMP3(input, output, [bitrate], [trimSilence])"
       },
       "TrimSilence": {
@@ -2381,6 +2455,10 @@
       "Convert": {
         "description": "Konvertiert ein Bild. Formate: jpg, png, webp, jxl (auch als Input). Bei ico: w/h/q durch Größen-Liste (16,32) ersetzen.",
         "syntax": "picture.Convert(in, out, fmt [, w, h, q])"
+      },
+      "ConvertAll": {
+        "description": "Konvertiert alle Dateien eines Ordners. Gibt 'Erfolg: n, Fehler: m' zurück.",
+        "syntax": "picture.ConvertAll(inDir, outDir, fmt [, w, h, q])"
       },
       "Snapshot": {
         "description": "Erstellt einen Screenshot eines Monitors.",
@@ -2654,6 +2732,10 @@
         "description": "Installiert einen neuen Windows-Dienst.",
         "syntax": "service.Install(name, displayName, exePath, [startType], [server])"
       },
+      "IsRunning": {
+        "description": "Prüft, ob ein Windows-Dienst aktiv ist.",
+        "syntax": "service.IsRunning(name)"
+      },
       "List": {
         "description": "Gibt ein Array aller Dienste zurück. Wenn showDisplayNames true ist, im Format 'Name:Anzeigename'.",
         "syntax": "service.List([server], [showDisplayNames])"
@@ -2777,127 +2859,127 @@
     },
     "string": {
       "Base32Decode": {
-        "description": "Wandelt einen Base32-String zurück in Text.",
+        "description": "Dekodiert Base32-Text",
         "syntax": "string.Base32Decode(base32Str)"
       },
       "Base32Encode": {
-        "description": "Wandelt Text in Base32 um (Standard-Alphabet, mit Padding).",
+        "description": "Kodiert Text als Base32",
         "syntax": "string.Base32Encode(val)"
       },
       "Between": {
-        "description": "Extrahiert den Text zwischen zwei Markern.",
+        "description": "Extrahiert Text zwischen zwei Markern",
         "syntax": "string.Between(s, start, end)"
       },
       "CharAt": {
-        "description": "Gibt ein einzelnes Zeichen zurück",
+        "description": "Gibt ein Zeichen an einer 1-basierten Position zurück",
         "syntax": "string.CharAt(str, index)"
       },
       "CharCount": {
-        "description": "Zählt alle Zeichen im Text außer Leerzeichen (Buchstaben, Ziffern sowie Satz-/Sonderzeichen zählen mit).",
+        "description": "Zählt Zeichen außer Leerraum",
         "syntax": "string.CharCount(s)"
       },
       "Choose": {
-        "description": "Wählt ein Element basierend auf einem Index (1-basiert)",
-        "syntax": "string.Choose(n,v...)"
+        "description": "Wählt ein Element anhand eines 1-basierten Index",
+        "syntax": "string.Choose(n, v...)"
       },
       "CleanAllLines": {
-        "description": "Entfernt alle Leerzeilen und trimmt verbleibende Zeilen.",
+        "description": "Entfernt Leerzeilen und trimmt verbleibende Zeilen",
         "syntax": "string.CleanAllLines(s)"
       },
       "CleanLines": {
-        "description": "Trimmt jede Zeile einzeln, behält aber Leerzeilen bei.",
+        "description": "Trimmt Zeilenenden und erhält Leerzeilen",
         "syntax": "string.CleanLines(s)"
       },
       "CombinePatterns": {
-        "description": "Kombiniert mehrere Regex-Muster (Array von Strings) per Oder-Verknüpfung (|) zu einem einzigen Muster, jedes Teil in einer nicht-capturing Gruppe geklammert.",
+        "description": "Verbindet Regex-Muster mit Oder",
         "syntax": "string.CombinePatterns(patterns)"
       },
       "CompareText": {
-        "description": "Vergleicht zwei Texte ohne Berücksichtigung der Groß-/Kleinschreibung.",
+        "description": "Vergleicht Texte ohne Groß-/Kleinschreibung",
         "syntax": "string.CompareText(string1, string2)"
       },
       "EndsWith": {
-        "description": "Prüft auf End-Suffix.",
+        "description": "Prüft auf Suffix",
         "syntax": "string.EndsWith(s, suffix)"
       },
       "Extract": {
-        "description": "Extrahiert die erste RegEx-Gruppe",
+        "description": "Gibt die erste Regex-Gruppe zurück",
         "syntax": "string.Extract(text, pattern)"
       },
       "ExtractMax": {
-        "description": "Findet alle Treffer und gibt die höchste Version zurück",
+        "description": "Gibt den höchsten extrahierten Versionswert zurück",
         "syntax": "string.ExtractMax(text, pattern)"
       },
       "HexDecode": {
-        "description": "Wandelt Hex-Strings zurück in Text.",
+        "description": "Dekodiert Hex-Text",
         "syntax": "string.HexDecode(hexStr)"
       },
       "HexEncode": {
-        "description": "Wandelt Text in Hex-Strings um (ABC -\u003e 414243).",
+        "description": "Wandelt Text in Hex um",
         "syntax": "string.HexEncode(val)"
       },
       "InsertAfterText": {
-        "description": "Fügt in jeder Zeile nach der ersten Fundstelle des Suchtextes den angegebenen Text ein und gibt den bearbeiteten Text zurück.",
+        "description": "Fügt in jeder Zeile nach dem ersten Treffer Text ein",
         "syntax": "string.InsertAfterText(text, suchtext, einfügen)"
       },
       "Join": {
-        "description": "Verbindet Array-Elemente.",
+        "description": "Verbindet Array-Elemente; Standardtrenner ist Zeilenumbruch",
         "syntax": "string.Join(arr, [sep])"
       },
       "Like": {
-        "description": "Einfacher Mustervergleich: # (Ziffer), ? (ein Zeichen), * (viele Zeichen).",
+        "description": "VB-Mustervergleich mit #, ? und *",
         "syntax": "string.Like(text, pattern)"
       },
       "Mid": {
-        "description": "Gibt einen Teilstring ab der angegebenen Position zurück.",
-        "syntax": "Mid(text, start [, length])"
+        "description": "Gibt einen Teilstring ab der 1-basierten Position zurück",
+        "syntax": "string.Mid(text, start, [length])"
       },
       "PadLeft": {
-        "description": "Füllt den String links auf eine Mindestlänge auf.",
+        "description": "Füllt links auf die gewünschte Zeichenlänge",
         "syntax": "string.PadLeft(s, n, [c])"
       },
       "PadRight": {
-        "description": "Füllt den String rechts auf eine Mindestlänge auf.",
+        "description": "Füllt rechts auf die gewünschte Zeichenlänge",
         "syntax": "string.PadRight(s, n, [c])"
       },
       "PatternFromExample": {
-        "description": "Leitet aus einem Beispielstring ein Regex-Muster ab (Ziffern-/Buchstabenfolgen werden zu \\d/[a-zA-Z]). exact=true nutzt {n}, false nutzt +. position: \"start\", \"end\" oder \"anywhere\". keep (optional): literaler Teilstring, der nicht generalisiert werden soll, z.B. \"IMG\" oder \"Bericht\".",
-        "syntax": "string.PatternFromExample(example, exact, position, keep)"
+        "description": "Erzeugt ein Regex-Muster aus Beispieltext",
+        "syntax": "string.PatternFromExample(example, exact, position, [keep])"
       },
       "RegExp": {
-        "description": "Extrahiert Treffer basierend auf einem Regex-Muster (inkl. Groups).",
+        "description": "Gibt den ersten Regex-Treffer und seine Gruppen als Array zurück",
         "syntax": "string.RegExp(s, pattern)"
       },
       "RemoveLine": {
-        "description": "Entfernt eine oder mehrere Zeilen anhand eines enthaltenen Textes oder einer Zeilennummer.",
-        "syntax": "string.RemoveLine(text, suchtext|zeile [, all])"
+        "description": "Entfernt Zeilen anhand Text oder 0-basierter Zeilennummer",
+        "syntax": "string.RemoveLine(text, suchtext|zeile, [all])"
       },
       "Repeat": {
-        "description": "Wiederholt den Text n-mal.",
+        "description": "Wiederholt Text n-mal",
         "syntax": "string.Repeat(s, n)"
       },
       "Reverse": {
-        "description": "Kehrt die Reihenfolge der Zeichen um.",
+        "description": "Kehrt Zeichenreihenfolge um",
         "syntax": "string.Reverse(s)"
       },
       "Space": {
-        "description": "Gibt n Leerzeichen zurück.",
+        "description": "Erzeugt n Leerzeichen",
         "syntax": "string.Space(n)"
       },
       "StartsWith": {
-        "description": "Prüft auf Start-Präfix.",
+        "description": "Prüft auf Präfix",
         "syntax": "string.StartsWith(s, prefix)"
       },
       "StrComp": {
-        "description": "Vergleicht zwei Strings (-1, 0, 1). Mode 1 = Ignoriere Case.",
+        "description": "Vergleicht zwei Strings; Mode 1 ignoriert Großschreibung",
         "syntax": "string.StrComp(s1, s2, [mode])"
       },
       "StrConv": {
-        "description": "Konvertiert einen String sicher in UTF-8, ideal für plattformübergreifende Daten.",
+        "description": "Sichert gültige UTF-8-Darstellung",
         "syntax": "string.StrConv(input)"
       },
       "StrDup": {
-        "description": "Gibt ein Zeichen n-mal wiederholt zurück.",
+        "description": "Wiederholt das erste Zeichen n-mal",
         "syntax": "string.StrDup(n, char)"
       },
       "Switch": {
@@ -2905,27 +2987,27 @@
         "syntax": "string.Switch(v...)"
       },
       "TrimLines": {
-        "description": "Entfernt Leerzeichen am Ende jeder einzelnen Zeile.",
+        "description": "Entfernt Leerraum am Zeilenende",
         "syntax": "string.TrimLines(content)"
       },
       "TxtToSqlInsert": {
-        "description": "Generiert SQL-Inserts aus einem Array (mit Transaktionen).",
-        "syntax": "string.TxtToSqlInsert(data, table, dialect...)"
+        "description": "Erzeugt SQL-INSERT-Anweisungen aus einem Array",
+        "syntax": "string.TxtToSqlInsert(data, table, dialect, [extras], [columns], [batchSize])"
       },
       "Val": {
-        "description": "Extrahiert den numerischen Teil eines Strings von links beginnend",
-        "syntax": "string.Val(n)"
+        "description": "Liest einen numerischen Präfix aus Text",
+        "syntax": "string.Val(s)"
       },
       "Wipe": {
-        "description": "Überschreibt ein Byte-Array (z.B. von reg.ReadProtectedValueBytes) in-place mit Nullen. Sollte aufgerufen werden, sobald ein entschlüsselter Wert nicht mehr benötigt wird.",
+        "description": "Überschreibt ein Byte-Array in-place mit Nullen.",
         "syntax": "string.Wipe(byteArray)"
       },
       "WipeString": {
-        "description": "Überschreibt den Speicherinhalt eines Strings mit Nullbytes (0x00). Im Gegensatz zu 'x = \"\"' wird hier der tatsächliche RAM-Inhalt gelöscht, nicht nur die Variable umgebogen. Nach dem Aufruf enthält die Variable eine Zeichenkette gleicher Länge, aber nur aus Nullbytes.",
+        "description": "Überschreibt den Speicherinhalt eines Strings mit Nullbytes.",
         "syntax": "string.WipeString(value)"
       },
       "WordCount": {
-        "description": "Zählt die Anzahl der Wörter in einem Text (mehrfache Leerzeichen werden korrekt behandelt).",
+        "description": "Zählt Wörter",
         "syntax": "string.WordCount(s)"
       }
     },
@@ -3055,7 +3137,7 @@
     },
     "win": {
       "FindEventID": {
-        "description": "Sucht im angegebenen Log nach einer spezifischen Event-ID.",
+        "description": "Sucht im angegebenen EventLog nach einer spezifischen Event-ID.",
         "syntax": "win.FindEventID(log, id, [count])"
       },
       "GetActiveTitle": {
@@ -3063,11 +3145,11 @@
         "syntax": "win.GetActiveTitle()"
       },
       "GetEvent": {
-        "description": "Liest Ereignisse eines Typs (Error, Warn, Info) aus dem Windows-EventLog.",
+        "description": "Liest Ereignisse eines Typs aus dem Windows-EventLog.",
         "syntax": "win.GetEvent(logName, level, [count])"
       },
       "SearchEventLog": {
-        "description": "Durchsucht ein EventLog nach einem bestimmten Text in den Event-Daten oder Providern.",
+        "description": "Durchsucht ein EventLog nach Text in den Event-Daten oder Providern.",
         "syntax": "win.SearchEventLog(log, text, [count])"
       }
     },
@@ -3145,8 +3227,8 @@
         "syntax": "zip.Exists(zipPath, entryName)"
       },
       "Extract": {
-        "description": "Entpackt ein Archiv. Schützt gegen Zip-Slip durch Pfad-Validierung.",
-        "syntax": "zip.Extract(zipPath, dest [, password])"
+        "description": "Entpackt ein ZIP-Archiv. Optional können führende Verzeichnisebenen entfernt werden. Schützt gegen Zip-Slip.",
+        "syntax": "zip.Extract(zipPath, dest [, password|stripComponents] [, stripComponents])"
       },
       "IsValid": {
         "description": "Prüft, ob eine Datei ein gültiges ZIP-Archiv ist (Inhalt, nicht nur Dateiendung).",

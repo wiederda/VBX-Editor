@@ -3,6 +3,8 @@ import 'dart:io';
 
 import 'package:http/http.dart' as http;
 
+import 'app_paths.dart';
+
 class VbxDocEntry {
   final String fileName;
   final String moduleName;
@@ -38,16 +40,7 @@ class VbxDocsService {
   bool get hasCachedDocs => _entries.isNotEmpty;
 
   Future<Directory> _cacheDir() async {
-    final appData = Platform.environment['APPDATA'];
-
-    if (appData == null || appData.isEmpty) {
-      throw Exception('APPDATA konnte nicht ermittelt werden.');
-    }
-
-    final dir = Directory(
-      '$appData${Platform.pathSeparator}VBX Editor'
-      '${Platform.pathSeparator}docs_cache',
-    );
+    final dir = VbxAppPaths.docsCacheDirectory;
 
     if (!await dir.exists()) {
       await dir.create(recursive: true);

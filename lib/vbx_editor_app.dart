@@ -33,6 +33,9 @@ import 'widgets/stop_icon.dart';
 import 'widgets/dryrun_icons.dart';
 import 'widgets/syntax_hint_overlay.dart';
 import 'widgets/admin_icon.dart';
+import 'widgets/ansi_text.dart';
+import 'widgets/project_explorer.dart';
+import 'widgets/project_icons.dart';
 
 part 'vbx_editor_app_session.dart';
 part 'vbx_editor_app_files.dart';
@@ -67,7 +70,7 @@ class _VbxEditorAppState extends State<VbxEditorApp> with WindowListener {
 
   final FileService _fileService = FileService();
 
-  late final VbxVersionService _versionService;
+  late final VbxcVersionService _versionService;
   late final VbxRunnerService _runnerService;
 
   final VbxHighlightService _highlightService = VbxHighlightService();
@@ -95,6 +98,8 @@ class _VbxEditorAppState extends State<VbxEditorApp> with WindowListener {
   TextSelection? _runOutputSelection;
 
   bool _docsVisible = false;
+  bool _projectExplorerVisible = false;
+  String? _workspacePath;
   bool _isAdministrator = false;
   double _fontSize = 14.0;
 
@@ -129,7 +134,7 @@ class _VbxEditorAppState extends State<VbxEditorApp> with WindowListener {
 
   StreamSubscription<String>? _fileOpenSubscription;
 
-  String _vbxVersion = 'Version wird ermittelt ...';
+  String _vbxcVersion = 'Version wird ermittelt ...';
 
   bool _searchVisible = false;
 
@@ -155,15 +160,15 @@ class _VbxEditorAppState extends State<VbxEditorApp> with WindowListener {
 
     _fontSize = widget.configService.fontSize;
 
-    final executable = widget.configService.vbxExecutable;
+    final executable = widget.configService.vbxcExecutable;
 
-    _versionService = VbxVersionService(executable: executable);
+    _versionService = VbxcVersionService(executable: executable);
 
     _runnerService = VbxRunnerService(executable: executable);
 
     _startupSequence();
 
-    _loadVbxVersion();
+    _loadVbxcVersion();
     _loadHighlight();
     _loadSyntax();
 
@@ -350,6 +355,18 @@ class _VbxEditorAppState extends State<VbxEditorApp> with WindowListener {
                   Expanded(
                     child: Row(
                       children: [
+                        if (_projectExplorerVisible && _workspacePath != null)
+                          SizedBox(
+                            width: 250,
+                            child: ProjectExplorer(
+                              rootPath: _workspacePath!,
+                              isDark: _isDarkTheme,
+                              onFileSelected: _openFilePath,
+                              onClose: () => setState(() {
+                                _projectExplorerVisible = false;
+                              }),
+                            ),
+                          ),
                         Expanded(
                           child: Column(
                             children: [

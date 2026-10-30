@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'app_paths.dart';
+
 class SessionTabState {
   final String? path;
   final bool modified;
@@ -34,13 +36,7 @@ class SessionData {
 
 class VbxSessionService {
   Future<File> _sessionFile() async {
-    final appData = Platform.environment['APPDATA'];
-
-    if (appData == null || appData.isEmpty) {
-      throw Exception('APPDATA konnte nicht ermittelt werden.');
-    }
-
-    final dir = Directory('$appData${Platform.pathSeparator}VBX Editor');
+    final dir = VbxAppPaths.configDirectory;
 
     if (!await dir.exists()) {
       await dir.create(recursive: true);

@@ -86,6 +86,45 @@ bool _nextNonEmptyLineMatches(
   return false;
 }
 
+/// Finds an existing closer for the newly opened block anywhere in the
+/// remaining block body. This handles pressing Enter on an opener that already
+/// has body text and a closer below it.
+bool _blockAlreadyClosedBelow(
+  String textAfter,
+  String expectedKeyword,
+  String expectedIndent,
+) {
+  final nestedClosers = <String>[];
+
+  for (final rawLine in textAfter.split('\n')) {
+    final line = rawLine.trim();
+    if (line.isEmpty) continue;
+
+    final isExpectedCloser = line.toLowerCase() == expectedKeyword.toLowerCase();
+    if (_isCloser(line)) {
+      final lineIndent =
+          RegExp(r'^[ \t]*').firstMatch(rawLine)?.group(0) ?? '';
+      if (nestedClosers.isNotEmpty &&
+          nestedClosers.last == line.toLowerCase()) {
+        nestedClosers.removeLast();
+      } else if (isExpectedCloser &&
+          lineIndent == expectedIndent &&
+          nestedClosers.isEmpty) {
+        return true;
+      } else if (nestedClosers.isEmpty) {
+        // A less-indented closer belongs to an outer block. A deeper closer
+        // may belong to a nested block, so keep looking for this block's end.
+        if (lineIndent.length <= expectedIndent.length) return false;
+      }
+    } else if (_isOpener(line)) {
+      final nestedCloser = _closingKeywordFor(line);
+      if (nestedCloser != null) nestedClosers.add(nestedCloser.toLowerCase());
+    }
+  }
+
+  return false;
+}
+
 /// Wird direkt nach einem Enter-Tastendruck aufgerufen (cursorOffset zeigt
 /// auf die Position direkt NACH dem bereits eingefügten '\n').
 /// Gibt null zurück, wenn nichts anzupassen ist.
@@ -142,11 +181,9 @@ AutoIndentResult? applyAutoIndent(String text, int cursorOffset) {
     // nochmal einfügen, um Duplikate zu vermeiden. In allen anderen
     // Fällen (auch wenn danach z. B. ein "End If" einer äußeren Ebene
     // folgt) wird der Abschluss eingefügt.
-    final alreadyClosedBelow = _nextNonEmptyLineMatches(
-      restAfterCursor,
-      effectiveIndent,
-      closing,
-    );
+    final alreadyClosedBelow =
+        _nextNonEmptyLineMatches(restAfterCursor, effectiveIndent, closing) ||
+        _blockAlreadyClosedBelow(restAfterCursor, closing, effectiveIndent);
 
     if (!alreadyClosedBelow) {
       final newText =

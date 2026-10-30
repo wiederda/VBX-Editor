@@ -53,6 +53,21 @@ class VbxRunnerService {
     );
   }
 
+  /// Baut eine VB-Datei für das angegebene Zielsystem:
+  /// vbxc build <target> <filePath>
+  Future<VbxRunResult> build(
+    String target,
+    String filePath, {
+    OutputCallback? onStdout,
+    OutputCallback? onStderr,
+  }) {
+    return _execute(
+      ['build', target, filePath],
+      onStdout: onStdout,
+      onStderr: onStderr,
+    );
+  }
+
   /// Bricht den aktuell laufenden Prozess ab.
   bool stop() {
     final process = _process;
@@ -92,15 +107,13 @@ class VbxRunnerService {
       final errBuf = StringBuffer();
 
       final stdoutDone = process.stdout.transform(utf8.decoder).forEach((c) {
-        final clean = _stripAnsi(c);
-        outBuf.write(clean);
-        onStdout?.call(clean);
+        outBuf.write(c);
+        onStdout?.call(c);
       });
 
       final stderrDone = process.stderr.transform(utf8.decoder).forEach((c) {
-        final clean = _stripAnsi(c);
-        errBuf.write(clean);
-        onStderr?.call(clean);
+        errBuf.write(c);
+        onStderr?.call(c);
       });
 
       final exitCode = await process.exitCode;
@@ -124,7 +137,4 @@ class VbxRunnerService {
     }
   }
 
-  String _stripAnsi(String text) {
-    return text.replaceAll(RegExp(r'\x1B\[[0-9;?]*[ -/]*[@-~]'), '');
-  }
 }

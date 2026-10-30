@@ -131,7 +131,7 @@ extension _VbxEditorAppRun on _VbxEditorAppState {
     });
   }
 
-  Future<void> _buildCurrentFile() async {
+  Future<void> _buildCurrentFile({required String target}) async {
     final tab = _currentTab;
 
     if (tab == null || tab.controller.text.trim().isEmpty) {
@@ -155,8 +155,8 @@ extension _VbxEditorAppRun on _VbxEditorAppState {
 
     _pendingOutput.clear();
 
-    final result = await _runnerService.runCommand(
-      'Build',
+    final result = await _runnerService.build(
+      target,
       tab.filePath!,
       onStdout: _appendOutput,
       onStderr: _appendOutput,

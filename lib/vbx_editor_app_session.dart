@@ -92,7 +92,7 @@ extension _VbxEditorAppSession on _VbxEditorAppState {
     await _sessionService.save(states, _activeTab);
   }
 
-  Future<void> _loadVbxVersion() async {
+  Future<void> _loadVbxcVersion() async {
     final version = await _versionService.getVersion();
 
     if (!mounted) {
@@ -100,7 +100,12 @@ extension _VbxEditorAppSession on _VbxEditorAppState {
     }
 
     setState(() {
-      _vbxVersion = version ?? 'VBX nicht gefunden';
+      _vbxcVersion = version == null
+          ? 'nicht gefunden'
+          : version.replaceFirst(
+              RegExp(r'^vbxc\s*', caseSensitive: false),
+              '',
+            );
     });
   }
 
